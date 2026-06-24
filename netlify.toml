@@ -1,4 +1,4 @@
-# Netlify deployment for the Khawaja Woolen Mills dashboard.
+# Netlify deployment for the Khawaja Woollen Mills dashboard.
 
 [build]
   command = "npm run build"

@@ -1,6 +1,6 @@
-# Khawaja Woolen Mills — Market Intelligence Dashboard
+# Khawaja Woollen Mills — Market Intelligence Dashboard
 
-A live dashboard for **Khawaja Woolen Mills (KWM)** that shows real-time cost
+A live dashboard for **Khawaja Woollen Mills (KWM)** that shows real-time cost
 signals for acrylic yarn production and lets you enter your own costs manually to
 get an estimated **final cost** and **suggested sell price**.
 
@@ -10,7 +10,7 @@ login is ever required for visitors** — it's a public web page.
 
 ## Features
 
-- **Khawaja Woolen Mills banner** with a live/offline status indicator.
+- **Khawaja Woollen Mills banner** with a live/offline status indicator.
 - **World clocks** — live Karachi / London / New York times.
 - **Live Feed** (watchlist tiles)
   - **Gold** — USD/oz with **PKR/tola** and **PKR/10g** conversion at the live rate.

@@ -194,7 +194,7 @@ export default function App() {
         </div>
 
         <footer className="text-[11px] text-faint text-center pt-2 pb-6">
-          Khawaja Woolen Mills · Market Intelligence — gold &amp; crude via Twelve
+          Khawaja Woollen Mills · Market Intelligence — gold &amp; crude via Twelve
           Data, FX via ExchangeRate-API. Acrylonitrile index is built from your
           confirmed prices (plus an indicative benchmark and a crude-anchored
           estimate); figures are indicative, confirm with suppliers before committing.

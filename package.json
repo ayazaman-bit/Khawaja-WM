@@ -2,7 +2,7 @@
   "name": "khawaja-woolen-mills-dashboard",
   "private": true,
   "version": "1.0.0",
-  "description": "Khawaja Woolen Mills — live market-intelligence & yarn cost dashboard",
+  "description": "Khawaja Woollen Mills — live market-intelligence & yarn cost dashboard",
   "type": "module",
   "scripts": {
     "dev": "vite",

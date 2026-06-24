@@ -6,12 +6,14 @@ export default function Banner({ lastUpdated, anyLive, onRefresh, refreshing }) 
     <header className="border-b border-border bg-panel/80 backdrop-blur sticky top-0 z-20">
       <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-brand/15 ring-1 ring-brand/40 flex items-center justify-center font-bold text-brand">
-            KWM
-          </div>
+          <img
+            src="/logo.svg"
+            alt="Khawaja Woollen Mills logo"
+            className="h-10 w-10 shrink-0"
+          />
           <div className="leading-tight">
             <h1 className="text-base sm:text-lg font-semibold tracking-tight">
-              Khawaja Woolen Mills
+              Khawaja Woollen Mills
             </h1>
             <p className="text-xs text-muted">
               Real-time cost signals for acrylic yarn production
