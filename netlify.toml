@@ -5,13 +5,8 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# Expose the market-data proxy (gold + crude) at a clean /api/markets path.
-[[redirects]]
-  from = "/api/markets"
-  to = "/.netlify/functions/markets"
-  status = 200
-
-# SPA fallback so client routes resolve to index.html.
+# The market-data function serves itself at /api/markets via its in-code
+# `config.path`, so only the SPA fallback is needed here.
 [[redirects]]
   from = "/*"
   to = "/index.html"
