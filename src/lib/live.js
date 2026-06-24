@@ -48,19 +48,33 @@ async function fetchMarkets() {
         live: data?.gold?.source && data.gold.source !== "fallback",
         source: data?.gold?.source || "fallback",
         asOf: data?.gold?.asOf || null,
+        series: Array.isArray(data?.gold?.series) ? data.gold.series : [],
       },
       crude: {
         value: Number(data?.crude?.usdBbl) || BASELINES.crudeUsdBbl,
         live: data?.crude?.source && data.crude.source !== "fallback",
         source: data?.crude?.source || "fallback",
         asOf: data?.crude?.asOf || null,
+        series: Array.isArray(data?.crude?.series) ? data.crude.series : [],
       },
     };
   } catch {
     return {
-      gold: { value: BASELINES.goldUsdOz, live: false, source: "fallback", asOf: null },
-      crude: { value: BASELINES.crudeUsdBbl, live: false, source: "fallback", asOf: null },
+      gold: { value: BASELINES.goldUsdOz, live: false, source: "fallback", asOf: null, series: [] },
+      crude: { value: BASELINES.crudeUsdBbl, live: false, source: "fallback", asOf: null, series: [] },
     };
+  }
+}
+
+// ---- Markets news via /api/news --------------------------------------------
+export async function fetchNews() {
+  try {
+    const res = await fetch("/api/news", { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) throw new Error(`news ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
   }
 }
 
@@ -106,6 +120,11 @@ export async function fetchSnapshot(anchor) {
   const crude = markets.crude;
   const gold = markets.gold;
   const an = estimateAn(crude.value, anchor);
+  // Derive a 30-day AN history from the crude history using the same model.
+  const anSeries = (crude.series || []).map((p) => ({
+    t: p.t,
+    v: estimateAn(p.v, anchor),
+  }));
   const wool = BASELINES.woolUsdKg; // no free wool feed; held at baseline
   const index = costPressureIndex({
     crude: crude.value,
@@ -120,6 +139,7 @@ export async function fetchSnapshot(anchor) {
     crude, // { value, live, source, asOf }
     gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
     an, // USD/MT
+    anSeries, // [{ t, v }] derived from crude
     wool, // USD/kg
     index,
     anchored: !!anchor,

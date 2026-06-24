@@ -1,18 +1,16 @@
 // Serverless market-data proxy for the dashboard.
 //
-// Fetches GOLD (USD/oz) and CRUDE OIL (Brent, USD/bbl) from a single provider
-// using one API key, kept server-side. The browser fetches /api/markets (same
-// origin) — no key in client code.
+// Fetches GOLD (USD/oz) and CRUDE OIL (Brent, USD/bbl) from a single provider,
+// using one API key kept server-side. Returns both the current price AND a
+// ~30-day daily history for the charts. The browser fetches /api/markets.
 //
 // PROVIDER: Twelve Data (https://twelvedata.com) — free tier covers gold,
-// Brent & WTI crude with a generous daily request budget.
-//   1. Get a free key: https://twelvedata.com/pricing  (Basic / Free plan)
-//   2. Set MARKETS_API_KEY in the Netlify UI (Site config -> Environment
-//      variables) or in a local .env for `netlify dev`.
+// Brent & WTI crude (time series + price).
+//   Set MARKETS_API_KEY in the Netlify UI (Site config -> Environment vars)
+//   or a local .env for `netlify dev`.
 //
-// Optional: if you also set EIA_API_KEY, crude is sourced from the EIA (US
-// gov, very reliable) instead of Twelve Data. Without any key the dashboard
-// still runs on labelled baseline values.
+// Optional: EIA_API_KEY sources the *current* crude price from the EIA (US
+// gov) instead; the chart history still comes from Twelve Data.
 //
 // If a price shows as "baseline" despite a key, check the symbols below against
 // https://twelvedata.com/exchanges/COMMODITY and adjust SYMBOLS.
@@ -22,30 +20,31 @@ const SYMBOLS = {
   brent: "BRENT", // Brent crude spot, USD per barrel
 };
 
+const HISTORY_DAYS = 30;
+
 // Keep these in step with BASELINES in src/config.js.
 const FALLBACK = { goldUsdOz: 2350, crudeUsdBbl: 78 };
 
 export default async () => {
   const out = {
-    gold: { usdOz: FALLBACK.goldUsdOz, source: "fallback", asOf: null },
-    crude: { usdBbl: FALLBACK.crudeUsdBbl, source: "fallback", asOf: null },
+    gold: { usdOz: FALLBACK.goldUsdOz, source: "fallback", asOf: null, series: [] },
+    crude: { usdBbl: FALLBACK.crudeUsdBbl, source: "fallback", asOf: null, series: [] },
     notes: [],
   };
 
-  await Promise.all([fillTwelveData(out), fillEia(out)]);
+  await fillTwelveData(out);
+  await fillEia(out); // optional crude override (current price only)
 
   return new Response(JSON.stringify(out), {
     headers: {
       "content-type": "application/json",
-      // Commodities move slowly; cache briefly to spare the API quota.
-      "cache-control": "public, max-age=600",
+      "cache-control": "public, max-age=900", // ~15 min; daily data
     },
   });
 };
 
 export const config = { path: "/api/markets" };
 
-// Read env from the Netlify runtime, falling back to process.env (local node).
 function env(name) {
   try {
     if (globalThis.Netlify?.env?.get) return globalThis.Netlify.env.get(name);
@@ -55,40 +54,52 @@ function env(name) {
   return process.env[name];
 }
 
-// ---- Twelve Data: gold + (default) crude in one batched call ---------------
+// ---- Twelve Data time series: gold + crude (price + 30d history) ------------
 async function fillTwelveData(out) {
   const key = env("MARKETS_API_KEY");
   if (!key) {
     out.notes.push("MARKETS_API_KEY not set — gold/crude on baseline.");
     return;
   }
-  try {
-    const symbols = `${SYMBOLS.gold},${SYMBOLS.brent}`;
-    const url =
-      `https://api.twelvedata.com/price?symbol=${encodeURIComponent(symbols)}` +
-      `&apikey=${key}`;
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`TwelveData ${res.status}`);
-    const data = await res.json();
-
-    const gold = pickPrice(data, SYMBOLS.gold);
-    if (gold) out.gold = { usdOz: gold, source: "Twelve Data", asOf: today() };
-
-    const crude = pickPrice(data, SYMBOLS.brent);
-    if (crude)
-      out.crude = { usdBbl: crude, source: "Twelve Data (Brent)", asOf: today() };
-  } catch (err) {
-    out.notes.push(`Twelve Data error: ${String(err.message || err)}`);
+  const [gold, crude] = await Promise.all([
+    series(SYMBOLS.gold, key),
+    series(SYMBOLS.brent, key),
+  ]);
+  if (gold) {
+    out.gold = { usdOz: gold.last, source: "Twelve Data", asOf: gold.asOf, series: gold.points };
+  } else {
+    out.notes.push("gold series unavailable");
+  }
+  if (crude) {
+    out.crude = { usdBbl: crude.last, source: "Twelve Data (Brent)", asOf: crude.asOf, series: crude.points };
+  } else {
+    out.notes.push("crude series unavailable");
   }
 }
 
-function pickPrice(data, symbol) {
-  const node = data?.[symbol] ?? data; // single-symbol responses aren't nested
-  const p = Number(node?.price);
-  return p > 0 ? p : null;
+async function series(symbol, key) {
+  try {
+    const url =
+      `https://api.twelvedata.com/time_series?symbol=${encodeURIComponent(symbol)}` +
+      `&interval=1day&outputsize=${HISTORY_DAYS}&order=ASC&apikey=${key}`;
+    const res = await fetch(url, { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) throw new Error(`${symbol} ${res.status}`);
+    const data = await res.json();
+    if (data?.status === "error" || !Array.isArray(data?.values)) {
+      throw new Error(data?.message || "no values");
+    }
+    const points = data.values
+      .map((v) => ({ t: v.datetime, v: Number(v.close) }))
+      .filter((p) => p.v > 0);
+    if (!points.length) throw new Error("empty");
+    const lastPoint = points[points.length - 1];
+    return { last: lastPoint.v, asOf: lastPoint.t, points };
+  } catch {
+    return null;
+  }
 }
 
-// ---- EIA (optional): overrides crude when EIA_API_KEY is present ------------
+// ---- EIA (optional): overrides current crude price -------------------------
 async function fillEia(out) {
   const key = env("EIA_API_KEY");
   if (!key) return;
@@ -105,14 +116,13 @@ async function fillEia(out) {
     const price = row ? Number(row.value) : null;
     if (price > 0) {
       out.crude = {
+        ...out.crude,
         usdBbl: price,
         source: "EIA Brent spot (RBRTE)",
-        asOf: row.period || null,
+        asOf: row.period || out.crude.asOf,
       };
     }
   } catch (err) {
     out.notes.push(`EIA error: ${String(err.message || err)}`);
   }
 }
-
-const today = () => new Date().toISOString().slice(0, 10);

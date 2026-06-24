@@ -11,15 +11,19 @@ login is ever required for visitors** — it's a public web page.
 ## Features
 
 - **Khawaja Woolen Mills banner** with a live/offline status indicator.
+- **World clocks** — live Karachi / London / New York times.
 - **Live Feed** (watchlist tiles)
   - **Gold** — USD/oz with **PKR/tola** and **PKR/10g** conversion at the live rate.
   - **Brent crude** — live, the macro driver behind acrylic.
   - **Acrylonitrile (AN)** — a **crude-anchored estimate** (there is no free
     live AN feed anywhere; AN tracks crude). Log a confirmed supplier price to
     re-anchor it.
-  - **PKR/USD** exchange rate — live, no key.
+  - **PKR/USD** and **PKR/GBP** exchange rates — live, no key.
   - **Cost Pressure Index** — a weighted crude · AN · wool · FX gauge with a
     **HIGH PRESSURE** alarm banner.
+- **30-day trend charts** — area charts for crude, gold and the AN estimate.
+- **Markets News** — live oil/gold/commodities headlines (RSS via a serverless
+  proxy) to support buying/pricing decisions.
 - **Yarn Cost Calculator** — two modes:
   - **Per kg** — enter your own costs (AN price, electricity, labour, margin,
     blend) plus **your own expense lines** (packaging, freight, dyeing, rent…).
@@ -36,9 +40,10 @@ login is ever required for visitors** — it's a public web page.
 |---|---|---|
 | Gold (USD/oz → PKR/tola) | Twelve Data via `netlify/functions/markets.js` | Yes — free `MARKETS_API_KEY` |
 | Brent crude | Twelve Data (or EIA if `EIA_API_KEY` set) | Yes — same `MARKETS_API_KEY` |
-| PKR/USD | `api.exchangerate-api.com` (client-side) | No |
+| PKR/USD, PKR/GBP | `api.exchangerate-api.com` (client-side) | No |
 | Acrylonitrile | Estimated from crude (`AN_MODEL` in `src/config.js`) | — |
 | Wool (EMI) | Reference baseline (no free feed) | — |
+| Markets news | RSS via `netlify/functions/news.js` (configurable `NEWS_RSS_URL`) | No |
 
 ### Why gold/crude are proxied (and AN isn't a direct feed)
 

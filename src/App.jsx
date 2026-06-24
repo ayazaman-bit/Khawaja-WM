@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Banner from "./components/Banner.jsx";
+import WorldClocks from "./components/WorldClocks.jsx";
 import LiveFeed from "./components/LiveFeed.jsx";
 import CostPressure from "./components/CostPressure.jsx";
+import Charts from "./components/Charts.jsx";
+import NewsFeed from "./components/NewsFeed.jsx";
 import CostCalculator from "./components/CostCalculator.jsx";
 import { fetchSnapshot } from "./lib/live.js";
 import { REFRESH_MS } from "./config.js";
@@ -79,6 +82,7 @@ export default function App() {
         onRefresh={refresh}
         refreshing={refreshing}
       />
+      <WorldClocks />
 
       <main className="mx-auto max-w-7xl px-4 py-5 space-y-5">
         <div className="grid lg:grid-cols-3 gap-5">
@@ -88,13 +92,20 @@ export default function App() {
           <CostPressure index={snap?.index ?? 100} history={history} />
         </div>
 
-        <CostCalculator
-          live={live}
-          inputs={inputs}
-          setInputs={setInputs}
-          onConfirmAn={onConfirmAn}
-          anchor={anchor}
-        />
+        <Charts snap={snap} />
+
+        <div className="grid lg:grid-cols-3 gap-5 items-stretch">
+          <div className="lg:col-span-2">
+            <CostCalculator
+              live={live}
+              inputs={inputs}
+              setInputs={setInputs}
+              onConfirmAn={onConfirmAn}
+              anchor={anchor}
+            />
+          </div>
+          <NewsFeed />
+        </div>
 
         <footer className="text-[11px] text-faint text-center pt-2 pb-6">
           Khawaja Woolen Mills · Market Intelligence — gold &amp; crude via Twelve
