@@ -1,13 +1,13 @@
-// Live market data: FX straight from the browser, crude via our own serverless
-// proxy (which keeps the EIA key server-side), and a crude-anchored AN estimate.
+// Live market data: FX straight from the browser (keyless), gold + crude via
+// our own serverless proxy (which keeps the single API key server-side), plus a
+// crude-anchored acrylonitrile estimate.
 
-import { BASELINES, AN_MODEL, INDEX_WEIGHTS } from "../config.js";
+import { BASELINES, AN_MODEL, INDEX_WEIGHTS, GOLD_UNITS } from "../config.js";
 
 const FX_URL = "https://api.exchangerate-api.com/v4/latest/USD";
 
-// Same-origin function. Works under `netlify dev` and on a deployed Netlify
-// site. The leading path is rewritten to the function in netlify.toml.
-const CRUDE_URL = "/api/crude";
+// Same-origin function, rewritten to the markets function in netlify.toml.
+const MARKETS_URL = "/api/markets";
 
 // ---- FX (PKR per USD) -------------------------------------------------------
 async function fetchFx() {
@@ -23,46 +23,57 @@ async function fetchFx() {
   return { value: BASELINES.pkrPerUsd, live: false };
 }
 
-// ---- Crude (Brent, USD/bbl) via /api/crude ---------------------------------
-async function fetchCrude() {
+// ---- Gold + crude via /api/markets -----------------------------------------
+async function fetchMarkets() {
   try {
-    const res = await fetch(CRUDE_URL, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) throw new Error(`crude ${res.status}`);
+    const res = await fetch(MARKETS_URL, { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) throw new Error(`markets ${res.status}`);
     const data = await res.json();
-    if (typeof data?.price === "number") {
-      return {
-        value: data.price,
-        live: data.source !== "fallback",
-        source: data.source,
-        asOf: data.asOf || null,
-      };
-    }
+    return {
+      gold: {
+        value: Number(data?.gold?.usdOz) || BASELINES.goldUsdOz,
+        live: data?.gold?.source && data.gold.source !== "fallback",
+        source: data?.gold?.source || "fallback",
+        asOf: data?.gold?.asOf || null,
+      },
+      crude: {
+        value: Number(data?.crude?.usdBbl) || BASELINES.crudeUsdBbl,
+        live: data?.crude?.source && data.crude.source !== "fallback",
+        source: data?.crude?.source || "fallback",
+        asOf: data?.crude?.asOf || null,
+      },
+    };
   } catch {
-    /* fall through to baseline */
+    return {
+      gold: { value: BASELINES.goldUsdOz, live: false, source: "fallback", asOf: null },
+      crude: { value: BASELINES.crudeUsdBbl, live: false, source: "fallback", asOf: null },
+    };
   }
+}
+
+// ---- Gold unit conversions (Pakistan-local) --------------------------------
+export function goldLocal(usdOz, pkrPerUsd) {
+  const pkrPerGram = (usdOz / GOLD_UNITS.gramsPerOunce) * pkrPerUsd;
   return {
-    value: BASELINES.crudeUsdBbl,
-    live: false,
-    source: "fallback",
-    asOf: null,
+    pkrPerTola: pkrPerGram * GOLD_UNITS.gramsPerTola,
+    pkrPer10g: pkrPerGram * 10,
   };
 }
 
 // ---- Acrylonitrile estimate, anchored to crude ------------------------------
-// anchor: { anUsdMt, crudeUsdBbl } — defaults to the configured baselines.
 export function estimateAn(crudeNow, anchor) {
   const base = anchor || {
     anUsdMt: BASELINES.anUsdMt,
     crudeUsdBbl: BASELINES.crudeUsdBbl,
   };
   const crudeRatio = crudeNow / base.crudeUsdBbl;
-  // AN moves beta-for-one with crude around the anchor.
   const estimate = base.anUsdMt * (1 + AN_MODEL.beta * (crudeRatio - 1));
   return Math.max(0, estimate);
 }
 
 // ---- Cost Pressure Index ----------------------------------------------------
-// Weighted sum of each driver's level vs baseline, scaled to 100 = at baseline.
+// Weighted level of each cost driver vs baseline, scaled to 100 = at baseline.
+// (Gold is a watch item, not a yarn cost driver, so it is excluded here.)
 export function costPressureIndex({ crude, an, wool, fx }) {
   const r = {
     crude: crude / BASELINES.crudeUsdBbl,
@@ -72,17 +83,17 @@ export function costPressureIndex({ crude, an, wool, fx }) {
   };
   const w = INDEX_WEIGHTS;
   const index =
-    100 *
-    (w.crude * r.crude + w.an * r.an + w.wool * r.wool + w.fx * r.fx);
+    100 * (w.crude * r.crude + w.an * r.an + w.wool * r.wool + w.fx * r.fx);
   return Math.round(index * 10) / 10;
 }
 
 // ---- Aggregate snapshot -----------------------------------------------------
 export async function fetchSnapshot(anchor) {
-  const [fx, crude] = await Promise.all([fetchFx(), fetchCrude()]);
+  const [fx, markets] = await Promise.all([fetchFx(), fetchMarkets()]);
+  const crude = markets.crude;
+  const gold = markets.gold;
   const an = estimateAn(crude.value, anchor);
-  // Wool has no free live feed; hold it at baseline (editable in config).
-  const wool = BASELINES.woolUsdKg;
+  const wool = BASELINES.woolUsdKg; // no free wool feed; held at baseline
   const index = costPressureIndex({
     crude: crude.value,
     an,
@@ -93,9 +104,10 @@ export async function fetchSnapshot(anchor) {
     at: Date.now(),
     fx, // { value, live }
     crude, // { value, live, source, asOf }
-    an, // number (USD/MT)
-    wool, // number (USD/kg)
-    index, // Cost Pressure Index
+    gold: { ...gold, local: goldLocal(gold.value, fx.value) },
+    an, // USD/MT
+    wool, // USD/kg
+    index,
     anchored: !!anchor,
   };
 }

@@ -7,17 +7,17 @@ export default function LiveFeed({ snap }) {
   if (!snap) return null;
 
   const change = (now, base) => ((now - base) / base) * 100;
+  const src = (s) =>
+    s.source === "fallback" ? "baseline" : `${s.source}${s.asOf ? ` · ${s.asOf}` : ""}`;
 
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-sm font-semibold">Live Feed</h2>
         <span className="text-[11px] text-muted">
-          {snap.crude.source === "fallback"
-            ? "crude: baseline (set EIA_API_KEY for live)"
-            : `crude: ${snap.crude.source}${
-                snap.crude.asOf ? ` · ${snap.crude.asOf}` : ""
-              }`}
+          {snap.crude.source === "fallback" && snap.gold.source === "fallback"
+            ? "set MARKETS_API_KEY for live gold & oil"
+            : `crude: ${src(snap.crude)}`}
         </span>
       </div>
 
@@ -29,6 +29,18 @@ export default function LiveFeed({ snap }) {
           change={change(snap.crude.value, BASELINES.crudeUsdBbl)}
           live={snap.crude.live}
           tag={snap.crude.live ? "LIVE" : "EST"}
+        />
+        <StatCard
+          label="Gold"
+          value={num(snap.gold.value, 0)}
+          unit="USD/oz"
+          change={change(snap.gold.value, BASELINES.goldUsdOz)}
+          live={snap.gold.live}
+          tag={snap.gold.live ? "LIVE" : "EST"}
+          subtext={`Rs ${num(snap.gold.local.pkrPerTola, 0)}/tola · Rs ${num(
+            snap.gold.local.pkrPer10g,
+            0
+          )}/10g`}
         />
         <StatCard
           label="Acrylonitrile"
@@ -46,18 +58,11 @@ export default function LiveFeed({ snap }) {
           live={snap.fx.live}
           tag={snap.fx.live ? "LIVE" : "EST"}
         />
-        <StatCard
-          label="Wool (EMI)"
-          value={num(snap.wool, 2)}
-          unit="USD/kg"
-          change={change(snap.wool, BASELINES.woolUsdKg)}
-          live={false}
-          tag="REF"
-        />
       </div>
       <p className="mt-2 text-[11px] text-faint">
         Acrylonitrile is a crude-anchored live estimate (no free AN feed exists).
-        Log a confirmed supplier price below to re-anchor it.
+        Log a confirmed supplier price below to re-anchor it. Gold shown in
+        USD/oz with PKR/tola conversion at the live rate.
       </p>
     </section>
   );

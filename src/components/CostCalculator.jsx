@@ -1,10 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { computeCost } from "../lib/costModel.js";
 import { CALC_DEFAULTS } from "../config.js";
-import { pkr, num, pct } from "../lib/format.js";
+import { pkr, num } from "../lib/format.js";
 
-// Field group definitions: which inputs are market-driven (live fallback) vs
-// mill parameters (default fallback).
 const MARKET_FIELDS = [
   { key: "anUsdMt", label: "AN price (USD/MT)", liveKey: "anUsdMt", dp: 0 },
   { key: "woolUsdKg", label: "Wool (USD/kg)", liveKey: "woolUsdKg", dp: 2 },
@@ -22,10 +20,21 @@ const MILL_FIELDS = [
 ];
 
 export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, anchor }) {
+  const [mode, setMode] = useState("perKg"); // "perKg" | "perOrder"
   const result = useMemo(() => computeCost(inputs, live), [inputs, live]);
 
   const set = (key, value) => setInputs({ ...inputs, [key]: value });
   const reset = () => setInputs({});
+
+  // ---- Custom expense rows ----
+  const expenses = Array.isArray(inputs.expenses) ? inputs.expenses : [];
+  const setExpenses = (next) => setInputs({ ...inputs, expenses: next });
+  const addExpense = () =>
+    setExpenses([...expenses, { label: "", amount: "" }]);
+  const updateExpense = (i, patch) =>
+    setExpenses(expenses.map((e, idx) => (idx === i ? { ...e, ...patch } : e)));
+  const removeExpense = (i) =>
+    setExpenses(expenses.filter((_, idx) => idx !== i));
 
   const confirmAn = () => {
     const price = Number(result.resolved.anUsdMt);
@@ -34,17 +43,20 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
 
   return (
     <section className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between gap-3 mb-1">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
         <h2 className="text-sm font-semibold">Yarn Cost Calculator</h2>
-        <button
-          onClick={reset}
-          className="text-[11px] text-muted hover:text-ink underline-offset-2 hover:underline"
-        >
-          reset to defaults
-        </button>
+        <div className="flex items-center gap-2">
+          <ModeToggle mode={mode} setMode={setMode} />
+          <button
+            onClick={reset}
+            className="text-[11px] text-muted hover:text-ink underline-offset-2 hover:underline"
+          >
+            reset
+          </button>
+        </div>
       </div>
       <p className="text-xs text-muted mb-4">
-        Enter your own costs to get the final cost. Empty fields use the live
+        Enter your own costs to get the final price. Empty fields use the live
         feed (market values) or mill defaults.
       </p>
 
@@ -74,6 +86,54 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
               />
             ))}
           </FieldGroup>
+
+          {/* ---- Custom expenses ---- */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] uppercase tracking-wide text-faint">
+                Your expenses (PKR/kg)
+              </span>
+              <button
+                onClick={addExpense}
+                className="text-[11px] text-brand hover:underline"
+              >
+                + add expense
+              </button>
+            </div>
+            {expenses.length === 0 && (
+              <p className="text-[11px] text-faint">
+                Add packaging, freight, dyeing, rent, finance cost, etc.
+              </p>
+            )}
+            <div className="space-y-2">
+              {expenses.map((e, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={e.label}
+                    placeholder="Expense name"
+                    onChange={(ev) => updateExpense(i, { label: ev.target.value })}
+                    className="flex-1 rounded-md border border-border bg-bg px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={e.amount}
+                    placeholder="PKR/kg"
+                    onChange={(ev) => updateExpense(i, { amount: ev.target.value })}
+                    className="mono w-24 rounded-md border border-border bg-bg px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+                  />
+                  <button
+                    onClick={() => removeExpense(i)}
+                    className="text-faint hover:text-danger px-1"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* ---- Outputs ---- */}
@@ -81,10 +141,10 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
           <div className="rounded-lg border border-border bg-panel p-4">
             <h3 className="text-xs text-muted mb-3">Estimated Cost Breakdown</h3>
             <div className="space-y-2">
-              {result.breakdown.map((b) => {
+              {result.breakdown.map((b, i) => {
                 const share = (b.value / result.costOfProduction) * 100;
                 return (
-                  <div key={b.label}>
+                  <div key={`${b.label}-${i}`}>
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-2">
                         <span
@@ -115,19 +175,11 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
             </div>
           </div>
 
-          <div className="rounded-lg border border-brand/40 bg-brand/10 p-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs text-muted">Suggested sell price</div>
-              <div className="text-[11px] text-faint">
-                incl. {num(result.resolved.targetMarginPct, 0)}% margin (
-                {pkr(result.marginPkr, 0)}/kg)
-              </div>
-            </div>
-            <span className="mono text-2xl font-bold text-brand">
-              {pkr(result.suggestedSell, 0)}
-              <span className="text-xs text-muted">/kg</span>
-            </span>
-          </div>
+          {mode === "perKg" ? (
+            <PerKgResult result={result} />
+          ) : (
+            <PerOrderResult result={result} qty={inputs.quantityKg ?? ""} onQty={(v) => set("quantityKg", v)} />
+          )}
 
           <div className="rounded-lg border border-border bg-panel p-4">
             <h3 className="text-xs text-muted mb-2">Log a confirmed AN price</h3>
@@ -151,6 +203,88 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
         </div>
       </div>
     </section>
+  );
+}
+
+function PerKgResult({ result }) {
+  return (
+    <div className="rounded-lg border border-brand/40 bg-brand/10 p-4 flex items-center justify-between">
+      <div>
+        <div className="text-xs text-muted">Suggested sell price</div>
+        <div className="text-[11px] text-faint">
+          incl. {num(result.resolved.targetMarginPct, 0)}% margin (
+          {pkr(result.marginPkr, 0)}/kg)
+        </div>
+      </div>
+      <span className="mono text-2xl font-bold text-brand">
+        {pkr(result.suggestedSell, 0)}
+        <span className="text-xs text-muted">/kg</span>
+      </span>
+    </div>
+  );
+}
+
+function PerOrderResult({ result, qty, onQty }) {
+  const { order } = result;
+  return (
+    <div className="rounded-lg border border-brand/40 bg-brand/10 p-4 space-y-3">
+      <label className="block">
+        <span className="block text-[11px] text-muted mb-1">Order quantity (kg)</span>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={qty}
+          placeholder="e.g. 500"
+          onChange={(e) => onQty(e.target.value)}
+          className="mono w-full rounded-md border border-border bg-bg px-2 py-1.5 text-sm focus:border-brand focus:outline-none"
+        />
+      </label>
+      <Row label="Cost / kg" value={pkr(result.costOfProduction, 0)} />
+      <Row label="Total cost" value={pkr(order.totalCost, 0)} />
+      <Row
+        label={`Margin (${num(result.resolved.targetMarginPct, 0)}%)`}
+        value={pkr(order.totalMargin, 0)}
+      />
+      <div className="pt-2 border-t border-brand/30 flex items-center justify-between">
+        <span className="text-xs text-muted">Order price</span>
+        <span className="mono text-xl font-bold text-brand">
+          {pkr(order.totalSell, 0)}
+        </span>
+      </div>
+      <div className="text-[11px] text-faint text-right">
+        {pkr(result.suggestedSell, 0)}/kg
+      </div>
+    </div>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div className="flex items-center justify-between text-xs">
+      <span className="text-muted">{label}</span>
+      <span className="mono">{value}</span>
+    </div>
+  );
+}
+
+function ModeToggle({ mode, setMode }) {
+  const opt = (key, text) => (
+    <button
+      onClick={() => setMode(key)}
+      className={`text-[11px] px-2.5 py-1 rounded-md transition ${
+        mode === key
+          ? "bg-brand/20 text-brand border border-brand/40"
+          : "text-muted border border-transparent hover:text-ink"
+      }`}
+    >
+      {text}
+    </button>
+  );
+  return (
+    <div className="flex items-center gap-1 rounded-lg bg-bg p-0.5 border border-border">
+      {opt("perKg", "Per kg")}
+      {opt("perOrder", "Per order")}
+    </div>
   );
 }
 

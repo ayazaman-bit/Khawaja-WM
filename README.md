@@ -4,62 +4,76 @@ A live dashboard for **Khawaja Woolen Mills (KWM)** that shows real-time cost
 signals for acrylic yarn production and lets you enter your own costs manually to
 get an estimated **final cost** and **suggested sell price**.
 
-This is now an **editable React + Vite source project** (rebuilt from the
-original compiled bundle), with a small serverless backend for live crude-oil
-prices.
+This is an **editable React + Vite source project** (rebuilt from the original
+compiled bundle), with a small serverless backend for live market prices. **No
+login is ever required for visitors** — it's a public web page.
 
 ## Features
 
 - **Khawaja Woolen Mills banner** with a live/offline status indicator.
-- **Live Feed**
-  - **PKR/USD** exchange rate — live from ExchangeRate-API (browser, no key).
-  - **Brent crude** — live from the **EIA** (U.S. Energy Information
-    Administration) via a serverless proxy that keeps the API key server-side.
+- **Live Feed** (watchlist tiles)
+  - **Gold** — USD/oz with **PKR/tola** and **PKR/10g** conversion at the live rate.
+  - **Brent crude** — live, the macro driver behind acrylic.
   - **Acrylonitrile (AN)** — a **crude-anchored estimate** (there is no free
-    live AN feed; AN tracks crude). You can log a confirmed supplier price to
+    live AN feed anywhere; AN tracks crude). Log a confirmed supplier price to
     re-anchor it.
+  - **PKR/USD** exchange rate — live, no key.
   - **Cost Pressure Index** — a weighted crude · AN · wool · FX gauge with a
     **HIGH PRESSURE** alarm banner.
-- **Yarn Cost Calculator** — enter your own costs (AN price, electricity,
-  labour, margin, blend, etc.). Any field you leave blank falls back to the live
-  feed or to mill defaults, so you always get a full **Estimated Cost Breakdown**,
-  a **cost of production (PKR/kg)** and a **suggested sell price**.
+- **Yarn Cost Calculator** — two modes:
+  - **Per kg** — enter your own costs (AN price, electricity, labour, margin,
+    blend) plus **your own expense lines** (packaging, freight, dyeing, rent…).
+    Get a full **Estimated Cost Breakdown**, **cost of production (PKR/kg)** and
+    **suggested sell price**. Empty fields fall back to the live feed or mill
+    defaults.
+  - **Per order** — enter a quantity (kg) to get **total cost** and **order
+    price** for quoting customers.
 - Confirmed prices and calculator inputs **persist** in the browser.
 
 ## Live data sources
 
 | Signal | Source | Key needed? |
 |---|---|---|
+| Gold (USD/oz → PKR/tola) | Twelve Data via `netlify/functions/markets.js` | Yes — free `MARKETS_API_KEY` |
+| Brent crude | Twelve Data (or EIA if `EIA_API_KEY` set) | Yes — same `MARKETS_API_KEY` |
 | PKR/USD | `api.exchangerate-api.com` (client-side) | No |
-| Brent crude | EIA via `netlify/functions/crude.js` | Yes — free `EIA_API_KEY` |
 | Acrylonitrile | Estimated from crude (`AN_MODEL` in `src/config.js`) | — |
 | Wool (EMI) | Reference baseline (no free feed) | — |
 
-### Why crude is proxied (and AN isn't a direct feed)
+### Why gold/crude are proxied (and AN isn't a direct feed)
 
-Free crude APIs all require an API key and must be called server-side — you must
-never ship a key in browser code. So `netlify/functions/crude.js` holds the key
-and returns a CORS-safe JSON the front-end can fetch at `/api/crude`. There is no
-free acrylonitrile API at all, so AN is modelled off crude and refined whenever
-you log a confirmed supplier price.
+Free gold/oil APIs all require an API key and must be called server-side — you
+must never ship a key in browser code. So `netlify/functions/markets.js` holds
+**one** key, fetches gold + crude, and returns a CORS-safe JSON the browser
+fetches at `/api/markets`. There is no free acrylonitrile API at all, so AN is
+modelled off crude and sharpened whenever you log a confirmed supplier price.
 
-## Get the EIA key (free)
+## Get the API key (free, one key)
 
-1. Register: https://www.eia.gov/opendata/register.php (instant, no card).
-2. **Local:** copy `.env.example` to `.env` and set `EIA_API_KEY=...`.
-3. **Netlify:** Site settings → Environment variables → add `EIA_API_KEY`.
+**Twelve Data** covers gold + crude on its free plan:
 
-Without a key the app still runs — crude shows a labelled baseline value.
+1. Sign up: https://twelvedata.com/pricing (free plan, instant key).
+2. **Local:** copy `.env.example` to `.env` and set `MARKETS_API_KEY=...`.
+3. **Netlify:** Site settings → Environment variables → add `MARKETS_API_KEY`.
+
+Optional: also set `EIA_API_KEY` (https://www.eia.gov/opendata/register.php) to
+source crude from the US government feed instead — extra reliability.
+
+Without any key the app still runs — gold & crude show labelled baseline values.
+
+> If gold or crude ever show as "baseline" despite a key, the provider's ticker
+> symbol may differ — check/adjust `SYMBOLS` at the top of
+> `netlify/functions/markets.js` against twelvedata.com/exchanges/COMMODITY.
 
 ## Develop
 
 ```bash
 npm install
 
-# Front-end only (crude falls back to baseline; FX is live):
+# Front-end only (gold/crude fall back to baseline; FX is live):
 npm run dev            # http://localhost:5173
 
-# Full stack incl. the crude proxy function (needs the Netlify CLI + .env):
+# Full stack incl. the market proxy function (needs the Netlify CLI + .env):
 npm install -g netlify-cli
 npm run netlify-dev    # http://localhost:8888
 ```
@@ -74,11 +88,11 @@ Connect this repo to **Netlify** — `netlify.toml` is already configured:
 
 - build command `npm run build`, publish `dist`
 - functions in `netlify/functions`
-- `/api/crude` routed to the crude function, plus SPA fallback
+- `/api/markets` routed to the markets function, plus SPA fallback
 
-Set `EIA_API_KEY` in the Netlify environment and deploy. (Any static host works
-for the front-end, but the live crude feed needs a host that runs the function —
-Netlify Functions, or an equivalent serverless platform.)
+Set `MARKETS_API_KEY` in the Netlify environment and deploy. (Any static host
+works for the front-end, but the live gold/crude feed needs a host that runs the
+function — Netlify Functions, or an equivalent serverless platform.)
 
 ## Tuning the model
 
@@ -94,11 +108,11 @@ src/
   main.jsx, App.jsx         App shell + state/refresh wiring
   config.js                 Baselines, model + calculator defaults
   lib/
-    live.js                 FX + crude fetch, AN model, pressure index
-    costModel.js            Yarn cost breakdown + suggested sell price
+    live.js                 FX + gold/crude fetch, gold units, AN model, index
+    costModel.js            Cost breakdown, expenses, per-kg & per-order totals
     storage.js, format.js   Persistence + formatting helpers
   components/               Banner, LiveFeed, CostPressure, CostCalculator, …
-netlify/functions/crude.js  EIA crude-oil proxy (key server-side, CORS)
+netlify/functions/markets.js  Gold + crude proxy (one key server-side, CORS)
 netlify.toml, public/_redirects   Deploy + routing config
 ```
 

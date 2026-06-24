@@ -11,7 +11,14 @@ export const BASELINES = {
   crudeUsdBbl: 78, // Brent crude reference (USD/bbl)
   anUsdMt: 1450, // Acrylonitrile reference (USD/MT)
   woolUsdKg: 11.5, // Wool reference, clean basis (USD/kg)
+  goldUsdOz: 2350, // Gold reference (USD per troy ounce)
   pkrPerUsd: 278, // PKR per 1 USD reference
+};
+
+// Unit conversions for displaying gold in Pakistan-local units.
+export const GOLD_UNITS = {
+  gramsPerOunce: 31.1035, // troy ounce -> grams
+  gramsPerTola: 11.6638, // 1 tola (Pakistan) in grams
 };
 
 // ---- Acrylonitrile-from-crude model -----------------------------------------

@@ -1,7 +1,7 @@
 import { pct } from "../lib/format.js";
 
 // A single live metric tile.
-export default function StatCard({ label, value, unit, change, live, tag }) {
+export default function StatCard({ label, value, unit, change, live, tag, subtext }) {
   const up = change != null && change > 0;
   const down = change != null && change < 0;
   return (
@@ -34,6 +34,7 @@ export default function StatCard({ label, value, unit, change, live, tag }) {
           {pct(change)} vs ref
         </span>
       )}
+      {subtext && <span className="mono text-[11px] text-muted">{subtext}</span>}
     </div>
   );
 }

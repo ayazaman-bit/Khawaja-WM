@@ -5,10 +5,10 @@
   publish = "dist"
   functions = "netlify/functions"
 
-# Expose the crude-oil proxy function at a clean /api/crude path.
+# Expose the market-data proxy (gold + crude) at a clean /api/markets path.
 [[redirects]]
-  from = "/api/crude"
-  to = "/.netlify/functions/crude"
+  from = "/api/markets"
+  to = "/.netlify/functions/markets"
   status = 200
 
 # SPA fallback so client routes resolve to index.html.

@@ -97,9 +97,9 @@ export default function App() {
         />
 
         <footer className="text-[11px] text-faint text-center pt-2 pb-6">
-          Khawaja Woolen Mills · Market Intelligence — FX live via ExchangeRate-API,
-          crude via EIA. Acrylonitrile is a crude-anchored estimate; figures are
-          indicative, confirm with suppliers before committing.
+          Khawaja Woolen Mills · Market Intelligence — gold &amp; crude via Twelve
+          Data, FX via ExchangeRate-API. Acrylonitrile is a crude-anchored
+          estimate; figures are indicative, confirm with suppliers before committing.
         </footer>
       </main>
     </div>

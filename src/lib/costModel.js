@@ -36,6 +36,13 @@ export function computeCost(inputs, live) {
   );
   const targetMarginPct = v("targetMarginPct", CALC_DEFAULTS.targetMarginPct);
 
+  // Free-form expense line items the user adds (PKR/kg each).
+  const expenses = Array.isArray(inputs.expenses) ? inputs.expenses : [];
+  const extraExpenses = expenses
+    .map((e) => Number(e.amount))
+    .filter((n) => !Number.isNaN(n) && n !== 0);
+  const extraTotal = extraExpenses.reduce((a, b) => a + b, 0);
+
   const acrylicFrac = clampFrac(acrylicContentPct / 100);
   const woolFrac = 1 - acrylicFrac;
 
@@ -54,7 +61,7 @@ export function computeCost(inputs, live) {
   const labourPkr = labourOverheadPkrKg;
 
   const costOfProduction =
-    acrylicCostPkr + woolCostPkr + energyPkr + labourPkr;
+    acrylicCostPkr + woolCostPkr + energyPkr + labourPkr + extraTotal;
   const suggestedSell = costOfProduction * (1 + targetMarginPct / 100);
   const marginPkr = suggestedSell - costOfProduction;
 
@@ -63,9 +70,27 @@ export function computeCost(inputs, live) {
     { label: "Wool", value: woolCostPkr, color: "#f59e0b" },
     { label: "Energy", value: energyPkr, color: "#22c55e" },
     { label: "Labour + overhead", value: labourPkr, color: "#9ca3af" },
+    ...expenses
+      .filter((e) => Number(e.amount) > 0)
+      .map((e) => ({
+        label: e.label?.trim() || "Other expense",
+        value: Number(e.amount),
+        color: "#a78bfa",
+      })),
   ];
 
+  // Order-level totals (per-order mode). quantityKg comes from inputs.
+  const quantityKg = v("quantityKg", 0);
+  const order = {
+    quantityKg,
+    totalCost: costOfProduction * quantityKg,
+    totalSell: suggestedSell * quantityKg,
+    totalMargin: marginPkr * quantityKg,
+  };
+
   return {
+    order,
+    extraTotal,
     resolved: {
       anUsdMt,
       woolUsdKg,
