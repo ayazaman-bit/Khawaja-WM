@@ -1,12 +1,17 @@
-# Netlify deployment config for the Khawaja Woolen Mills dashboard.
-# The site is a pre-built static SPA — nothing to compile, just publish the repo root.
+# Netlify deployment for the Khawaja Woolen Mills dashboard.
 
 [build]
-  publish = "."
-  command = ""
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
 
-# Single-page-app fallback so client-side routes resolve to index.html.
-# (Mirrors the _redirects file for redundancy.)
+# Expose the crude-oil proxy function at a clean /api/crude path.
+[[redirects]]
+  from = "/api/crude"
+  to = "/.netlify/functions/crude"
+  status = 200
+
+# SPA fallback so client routes resolve to index.html.
 [[redirects]]
   from = "/*"
   to = "/index.html"
