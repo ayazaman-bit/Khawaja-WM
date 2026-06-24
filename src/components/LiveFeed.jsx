@@ -21,7 +21,7 @@ export default function LiveFeed({ snap }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <StatCard
           label="Brent Crude"
           value={num(snap.crude.value, 2)}
@@ -57,6 +57,14 @@ export default function LiveFeed({ snap }) {
           change={change(snap.fx.value, BASELINES.pkrPerUsd)}
           live={snap.fx.live}
           tag={snap.fx.live ? "LIVE" : "EST"}
+        />
+        <StatCard
+          label="PKR / GBP"
+          value={num(snap.fxGbp.value, 2)}
+          unit="PKR"
+          change={change(snap.fxGbp.value, BASELINES.pkrPerGbp)}
+          live={snap.fxGbp.live}
+          tag={snap.fxGbp.live ? "LIVE" : "EST"}
         />
       </div>
       <p className="mt-2 text-[11px] text-faint">

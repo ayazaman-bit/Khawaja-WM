@@ -13,6 +13,7 @@ export const BASELINES = {
   woolUsdKg: 11.5, // Wool reference, clean basis (USD/kg)
   goldUsdOz: 2350, // Gold reference (USD per troy ounce)
   pkrPerUsd: 278, // PKR per 1 USD reference
+  pkrPerGbp: 352, // PKR per 1 GBP reference
 };
 
 // Unit conversions for displaying gold in Pakistan-local units.

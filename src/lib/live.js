@@ -9,18 +9,31 @@ const FX_URL = "https://api.exchangerate-api.com/v4/latest/USD";
 // Same-origin function, rewritten to the markets function in netlify.toml.
 const MARKETS_URL = "/api/markets";
 
-// ---- FX (PKR per USD) -------------------------------------------------------
+// ---- FX (PKR per USD and per GBP) ------------------------------------------
+// ExchangeRate-API returns all rates against a USD base, so PKR per GBP is
+// simply the PKR rate divided by the GBP rate.
 async function fetchFx() {
   try {
     const res = await fetch(FX_URL, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error(`fx ${res.status}`);
     const data = await res.json();
     const pkr = data?.rates?.PKR;
-    if (pkr) return { value: pkr, live: true };
+    const gbp = data?.rates?.GBP;
+    if (pkr) {
+      const usd = { value: pkr, live: true };
+      const perGbp = gbp ? pkr / gbp : null;
+      const gbpObj = perGbp
+        ? { value: perGbp, live: true }
+        : { value: BASELINES.pkrPerGbp, live: false };
+      return { usd, gbp: gbpObj };
+    }
   } catch {
     /* fall through to baseline */
   }
-  return { value: BASELINES.pkrPerUsd, live: false };
+  return {
+    usd: { value: BASELINES.pkrPerUsd, live: false },
+    gbp: { value: BASELINES.pkrPerGbp, live: false },
+  };
 }
 
 // ---- Gold + crude via /api/markets -----------------------------------------
@@ -98,13 +111,14 @@ export async function fetchSnapshot(anchor) {
     crude: crude.value,
     an,
     wool,
-    fx: fx.value,
+    fx: fx.usd.value,
   });
   return {
     at: Date.now(),
-    fx, // { value, live }
+    fx: fx.usd, // PKR/USD { value, live }
+    fxGbp: fx.gbp, // PKR/GBP { value, live }
     crude, // { value, live, source, asOf }
-    gold: { ...gold, local: goldLocal(gold.value, fx.value) },
+    gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
     an, // USD/MT
     wool, // USD/kg
     index,
