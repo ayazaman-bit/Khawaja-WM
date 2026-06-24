@@ -1,0 +1,13 @@
+# Netlify deployment config for the Khawaja Woolen Mills dashboard.
+# The site is a pre-built static SPA — nothing to compile, just publish the repo root.
+
+[build]
+  publish = "."
+  command = ""
+
+# Single-page-app fallback so client-side routes resolve to index.html.
+# (Mirrors the _redirects file for redundancy.)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
