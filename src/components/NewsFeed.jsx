@@ -1,30 +1,6 @@
-import { useEffect, useState } from "react";
-import { fetchNews } from "../lib/live.js";
-
-const NEWS_REFRESH_MS = 15 * 60 * 1000;
-
-// Markets / commodities news to support decisions. Headlines come from the
-// /api/news serverless proxy (RSS -> JSON).
-export default function NewsFeed() {
-  const [items, setItems] = useState(null); // null = loading
-  const [updated, setUpdated] = useState(null);
-
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      const news = await fetchNews();
-      if (!alive) return;
-      setItems(news);
-      setUpdated(Date.now());
-    };
-    load();
-    const id = setInterval(load, NEWS_REFRESH_MS);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, []);
-
+// Markets / commodities news to support decisions. Headlines are fetched once
+// in App (via /api/news) and shared with the top ticker.
+export default function NewsFeed({ items }) {
   return (
     <section className="rounded-xl border border-border bg-card p-4 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
@@ -41,7 +17,7 @@ export default function NewsFeed() {
 
       {items !== null && items.length === 0 && (
         <div className="text-[11px] text-faint">
-          News feed unavailable right now. (You can set a different RSS source via
+          News feed unavailable right now. (A different RSS source can be set via
           the <span className="mono">NEWS_RSS_URL</span> env variable.)
         </div>
       )}

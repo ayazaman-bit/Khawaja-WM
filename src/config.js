@@ -14,6 +14,8 @@ export const BASELINES = {
   goldUsdOz: 2350, // Gold reference (USD per troy ounce)
   pkrPerUsd: 278, // PKR per 1 USD reference
   pkrPerGbp: 352, // PKR per 1 GBP reference
+  pkrPerEur: 300, // PKR per 1 EUR reference
+  pkrPerAed: 76, // PKR per 1 AED reference
 };
 
 // Unit conversions for displaying gold in Pakistan-local units.

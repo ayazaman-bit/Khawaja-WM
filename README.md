@@ -18,12 +18,13 @@ login is ever required for visitors** — it's a public web page.
   - **Acrylonitrile (AN)** — a **crude-anchored estimate** (there is no free
     live AN feed anywhere; AN tracks crude). Log a confirmed supplier price to
     re-anchor it.
-  - **PKR/USD** and **PKR/GBP** exchange rates — live, no key.
+  - **Currencies** — live **PKR/USD, PKR/GBP, PKR/EUR, PKR/AED**, no key.
   - **Cost Pressure Index** — a weighted crude · AN · wool · FX gauge with a
     **HIGH PRESSURE** alarm banner.
 - **30-day trend charts** — area charts for crude, gold and the AN estimate.
-- **Markets News** — live oil/gold/commodities headlines (RSS via a serverless
-  proxy) to support buying/pricing decisions.
+- **Markets News** — a scrolling headline **ticker** plus a news panel, both fed
+  by live oil/gold/commodities RSS (via a serverless proxy), to support
+  buying/pricing decisions.
 - **Yarn Cost Calculator** — two modes:
   - **Per kg** — enter your own costs (AN price, electricity, labour, margin,
     blend) plus **your own expense lines** (packaging, freight, dyeing, rent…).

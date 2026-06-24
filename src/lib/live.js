@@ -9,30 +9,43 @@ const FX_URL = "https://api.exchangerate-api.com/v4/latest/USD";
 // Same-origin function, rewritten to the markets function in netlify.toml.
 const MARKETS_URL = "/api/markets";
 
-// ---- FX (PKR per USD and per GBP) ------------------------------------------
-// ExchangeRate-API returns all rates against a USD base, so PKR per GBP is
-// simply the PKR rate divided by the GBP rate.
+// ---- FX (PKR per USD, GBP, EUR, AED) ---------------------------------------
+// ExchangeRate-API returns all rates against a USD base, so PKR per <CCY> is
+// simply the PKR rate divided by that currency's rate.
+const FX_BASELINE = {
+  usd: BASELINES.pkrPerUsd,
+  gbp: BASELINES.pkrPerGbp,
+  eur: BASELINES.pkrPerEur,
+  aed: BASELINES.pkrPerAed,
+};
+
 async function fetchFx() {
   try {
     const res = await fetch(FX_URL, { signal: AbortSignal.timeout(6000) });
     if (!res.ok) throw new Error(`fx ${res.status}`);
     const data = await res.json();
-    const pkr = data?.rates?.PKR;
-    const gbp = data?.rates?.GBP;
+    const r = data?.rates || {};
+    const pkr = r.PKR;
     if (pkr) {
-      const usd = { value: pkr, live: true };
-      const perGbp = gbp ? pkr / gbp : null;
-      const gbpObj = perGbp
-        ? { value: perGbp, live: true }
-        : { value: BASELINES.pkrPerGbp, live: false };
-      return { usd, gbp: gbpObj };
+      const per = (code, baseline) => {
+        const rate = code === "USD" ? 1 : r[code];
+        return rate ? { value: pkr / rate, live: true } : { value: baseline, live: false };
+      };
+      return {
+        usd: { value: pkr, live: true },
+        gbp: per("GBP", FX_BASELINE.gbp),
+        eur: per("EUR", FX_BASELINE.eur),
+        aed: per("AED", FX_BASELINE.aed),
+      };
     }
   } catch {
     /* fall through to baseline */
   }
   return {
-    usd: { value: BASELINES.pkrPerUsd, live: false },
-    gbp: { value: BASELINES.pkrPerGbp, live: false },
+    usd: { value: FX_BASELINE.usd, live: false },
+    gbp: { value: FX_BASELINE.gbp, live: false },
+    eur: { value: FX_BASELINE.eur, live: false },
+    aed: { value: FX_BASELINE.aed, live: false },
   };
 }
 
@@ -134,8 +147,8 @@ export async function fetchSnapshot(anchor) {
   });
   return {
     at: Date.now(),
-    fx: fx.usd, // PKR/USD { value, live }
-    fxGbp: fx.gbp, // PKR/GBP { value, live }
+    fx: fx.usd, // PKR/USD { value, live } (used by the cost model)
+    fxAll: fx, // { usd, gbp, eur, aed } each { value, live }
     crude, // { value, live, source, asOf }
     gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
     an, // USD/MT

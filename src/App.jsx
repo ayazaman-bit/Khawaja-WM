@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Banner from "./components/Banner.jsx";
 import WorldClocks from "./components/WorldClocks.jsx";
+import NewsTicker from "./components/NewsTicker.jsx";
 import LiveFeed from "./components/LiveFeed.jsx";
 import CostPressure from "./components/CostPressure.jsx";
 import Charts from "./components/Charts.jsx";
 import NewsFeed from "./components/NewsFeed.jsx";
 import CostCalculator from "./components/CostCalculator.jsx";
-import { fetchSnapshot } from "./lib/live.js";
+import { fetchSnapshot, fetchNews } from "./lib/live.js";
 import { REFRESH_MS } from "./config.js";
 import {
   loadAnchor,
@@ -21,6 +22,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [anchor, setAnchor] = useState(() => loadAnchor());
   const [inputs, setInputs] = useState(() => loadCalc());
+  const [news, setNews] = useState(null); // null = loading
   const anchorRef = useRef(anchor);
   anchorRef.current = anchor;
 
@@ -46,6 +48,21 @@ export default function App() {
   useEffect(() => {
     saveCalc(inputs);
   }, [inputs]);
+
+  // Markets news for the ticker + panel (one fetch, refreshed every 15 min).
+  useEffect(() => {
+    let alive = true;
+    const loadNews = async () => {
+      const items = await fetchNews();
+      if (alive) setNews(items);
+    };
+    loadNews();
+    const id = setInterval(loadNews, 15 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
 
   // Confirm an AN price -> re-anchor the live estimate to current crude.
   const onConfirmAn = (anUsdMt) => {
@@ -83,6 +100,7 @@ export default function App() {
         refreshing={refreshing}
       />
       <WorldClocks />
+      <NewsTicker items={news} />
 
       <main className="mx-auto max-w-7xl px-4 py-5 space-y-5">
         <div className="grid lg:grid-cols-3 gap-5">
@@ -104,7 +122,7 @@ export default function App() {
               anchor={anchor}
             />
           </div>
-          <NewsFeed />
+          <NewsFeed items={news} />
         </div>
 
         <footer className="text-[11px] text-faint text-center pt-2 pb-6">
