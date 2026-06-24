@@ -7,9 +7,9 @@ export default function Banner({ lastUpdated, anyLive, onRefresh, refreshing }) 
       <div className="mx-auto max-w-7xl px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <img
-            src="/logo.svg"
+            src="/logo-mark.png"
             alt="Khawaja Woollen Mills logo"
-            className="h-10 w-10 shrink-0"
+            className="h-10 w-10 shrink-0 object-contain"
           />
           <div className="leading-tight">
             <h1 className="text-base sm:text-lg font-semibold tracking-tight">
