@@ -15,12 +15,16 @@ login is ever required for visitors** — it's a public web page.
 - **Live Feed** (watchlist tiles)
   - **Gold** — USD/oz with **PKR/tola** and **PKR/10g** conversion at the live rate.
   - **Brent crude** — live, the macro driver behind acrylic.
-  - **Acrylonitrile (AN)** — a **crude-anchored estimate** (there is no free
-    live AN feed anywhere; AN tracks crude). Log a confirmed supplier price to
-    re-anchor it.
+  - **Acrylonitrile (AN)** — see the **AN Price Index** below.
   - **Currencies** — live **PKR/USD, PKR/GBP, PKR/EUR, PKR/AED**, no key.
   - **Cost Pressure Index** — a weighted crude · AN · wool · FX gauge with a
     **HIGH PRESSURE** alarm banner.
+- **Acrylonitrile Price Index** — there is **no free live AN feed anywhere**, so
+  the accurate index is built from the **confirmed prices you log** (price +
+  date + supplier note), shown as a real trend chart with latest/average. It's
+  shown alongside an **indicative market benchmark** (a best-effort scrape of a
+  public page, configured via `AN_BENCH_URL`) and the crude-anchored model
+  estimate. Each logged price re-anchors that estimate.
 - **30-day trend charts** — area charts for crude, gold and the AN estimate.
 - **Markets News** — a scrolling headline **ticker** plus a news panel, both fed
   by live oil/gold/commodities RSS (via a serverless proxy), to support
@@ -42,7 +46,9 @@ login is ever required for visitors** — it's a public web page.
 | Gold (USD/oz → PKR/tola) | Twelve Data via `netlify/functions/markets.js` | Yes — free `MARKETS_API_KEY` |
 | Brent crude | Twelve Data (or EIA if `EIA_API_KEY` set) | Yes — same `MARKETS_API_KEY` |
 | PKR/USD, PKR/GBP | `api.exchangerate-api.com` (client-side) | No |
-| Acrylonitrile | Estimated from crude (`AN_MODEL` in `src/config.js`) | — |
+| Acrylonitrile (index) | Prices you log in-app (most accurate) | No |
+| Acrylonitrile (benchmark) | Scrape via `netlify/functions/anbench.js` (`AN_BENCH_URL`) | No |
+| Acrylonitrile (estimate) | Modelled from crude (`AN_MODEL` in `src/config.js`) | — |
 | Wool (EMI) | Reference baseline (no free feed) | — |
 | Markets news | RSS via `netlify/functions/news.js` (configurable `NEWS_RSS_URL`) | No |
 

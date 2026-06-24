@@ -79,6 +79,18 @@ async function fetchMarkets() {
   }
 }
 
+// ---- AN benchmark (best-effort scrape) via /api/anbench --------------------
+export async function fetchAnBenchmark() {
+  try {
+    const res = await fetch("/api/anbench", { signal: AbortSignal.timeout(9000) });
+    if (!res.ok) throw new Error(`anbench ${res.status}`);
+    const data = await res.json();
+    return data?.ok ? data : null;
+  } catch {
+    return null;
+  }
+}
+
 // ---- Markets news via /api/news --------------------------------------------
 export async function fetchNews() {
   try {
