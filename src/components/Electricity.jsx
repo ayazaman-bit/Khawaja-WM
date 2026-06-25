@@ -13,6 +13,17 @@ import { NEPRA_SOURCE } from "../config.js";
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const ELEC_COLOR = "#38bdf8";
 
+const shortDate = (s) => {
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  return d.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 // Compact GEPCO electricity tracker: log the effective PKR/kWh you pay, see the
 // trend, feed the calculator, and watch Pakistan power news. No backend — the
 // rates you log live in the browser (like the AN Price Index).
@@ -204,6 +215,13 @@ export default function Electricity({ log, news, onAdd, onRemove }) {
                 >
                   {it.title}
                 </a>
+                {(it.source || it.date) && (
+                  <span className="text-[10px] text-faint">
+                    {it.source ? it.source : ""}
+                    {it.source && it.date ? " · " : ""}
+                    {it.date ? shortDate(it.date) : ""}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

@@ -1,10 +1,9 @@
-// Serverless news proxy: fetches a markets/commodities RSS feed server-side
-// (browsers can't fetch most RSS due to CORS) and returns clean JSON for the
-// dashboard's news panel. No API key required.
+// Serverless news proxy: fetches an RSS feed server-side (browsers can't fetch
+// most RSS due to CORS) and returns clean, de-duplicated, newest-first JSON.
+// No API key required.
 //
-// The feed is configurable: set NEWS_RSS_URL in the Netlify env to point at any
-// RSS/Atom feed you prefer (e.g. an oil, textile or Pakistan-business feed).
-// Otherwise a few sensible defaults are tried in order until one works.
+// Default markets feed is configurable via NEWS_RSS_URL. The Pakistan power /
+// NEPRA feed (topic=energy) is configurable via NEWS_ENERGY_RSS_URL.
 
 const DEFAULT_FEEDS = [
   "https://oilprice.com/rss/main",
@@ -12,13 +11,21 @@ const DEFAULT_FEEDS = [
   "https://feeds.finance.yahoo.com/rss/2.0/headline?s=CL=F,GC=F&region=US&lang=en-US",
 ];
 
-// Pakistan power / NEPRA news (topic=energy). Google News RSS is reliable and
-// server-fetchable; overridable via NEWS_ENERGY_RSS_URL.
+// Pakistan power / NEPRA / GEPCO news (topic=energy). Google News RSS search,
+// scoped to Pakistan (gl=PK) and to the last 30 days (when:30d) so results stay
+// fresh and come from Pakistani outlets (Dawn, Business Recorder, ProPakistani,
+// Tribune, The News, etc.).
+const ENERGY_QUERY =
+  '(NEPRA OR GEPCO OR "electricity tariff" OR "power tariff" OR ' +
+  '"fuel charges adjustment" OR "base tariff" OR "electricity price") Pakistan when:30d';
 const ENERGY_FEEDS = [
   "https://news.google.com/rss/search?q=" +
-    encodeURIComponent("Pakistan electricity tariff OR NEPRA OR power") +
+    encodeURIComponent(ENERGY_QUERY) +
     "&hl=en-PK&gl=PK&ceid=PK:en",
 ];
+
+const MAX_ITEMS = 12;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export default async (req) => {
   let topic = null;
@@ -28,23 +35,31 @@ export default async (req) => {
     /* no query */
   }
 
-  const feeds =
-    topic === "energy"
-      ? [env("NEWS_ENERGY_RSS_URL"), ...ENERGY_FEEDS].filter(Boolean)
-      : (() => {
-          const configured = env("NEWS_RSS_URL");
-          return configured ? [configured, ...DEFAULT_FEEDS] : DEFAULT_FEEDS;
-        })();
+  const isEnergy = topic === "energy";
+  const feeds = isEnergy
+    ? [env("NEWS_ENERGY_RSS_URL"), ...ENERGY_FEEDS].filter(Boolean)
+    : (() => {
+        const configured = env("NEWS_RSS_URL");
+        return configured ? [configured, ...DEFAULT_FEEDS] : DEFAULT_FEEDS;
+      })();
 
-  let items = [];
+  let raw = [];
   let usedFeed = null;
   for (const url of feeds) {
-    items = await tryFeed(url);
-    if (items.length) {
+    raw = await tryFeed(url);
+    if (raw.length) {
       usedFeed = url;
       break;
     }
   }
+
+  // Clean up: split off the " - Source" suffix, sort newest-first, and for the
+  // energy feed drop anything older than 45 days (defensive against stale hits).
+  let items = raw
+    .map((it) => (isEnergy ? withSource(it) : { ...it, source: null }))
+    .sort(byDateDesc);
+  if (isEnergy) items = recent(items, 45);
+  items = items.slice(0, MAX_ITEMS);
 
   return new Response(JSON.stringify({ items, source: usedFeed }), {
     headers: {
@@ -73,26 +88,52 @@ async function tryFeed(url) {
     });
     if (!res.ok) return [];
     const xml = await res.text();
-    return parseRss(xml).slice(0, 12);
+    return parseRss(xml);
   } catch {
     return [];
   }
 }
 
+const parseDate = (s) => {
+  const t = Date.parse(s);
+  return Number.isNaN(t) ? 0 : t;
+};
+const byDateDesc = (a, b) => parseDate(b.date) - parseDate(a.date);
+
+// Keep items within `days`; if that leaves nothing (e.g. dates unparseable),
+// fall back to the unfiltered list rather than showing an empty panel.
+function recent(items, days) {
+  const cutoff = Date.now() - days * DAY_MS;
+  const fresh = items.filter((it) => parseDate(it.date) >= cutoff);
+  return fresh.length ? fresh : items;
+}
+
+// Google News titles end with " - Source"; pull that out for display.
+function withSource(it) {
+  const m = it.title.match(/\s[-–]\s([^-–]{2,40})$/);
+  if (m) {
+    return { ...it, source: m[1].trim(), title: it.title.slice(0, m.index).trim() };
+  }
+  return { ...it, source: null };
+}
+
 // Minimal, dependency-free RSS/Atom parser: pulls title/link/date per item.
 function parseRss(xml) {
-  const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) ||
-    xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) || [];
+  const blocks =
+    xml.match(/<item[\s>][\s\S]*?<\/item>/gi) ||
+    xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) ||
+    [];
   return blocks
     .map((block) => {
       const title = clean(tag(block, "title"));
       let link = clean(tag(block, "link"));
-      // Atom uses <link href="..."/>.
       if (!link) {
         const m = block.match(/<link[^>]*href=["']([^"']+)["']/i);
         link = m ? m[1] : "";
       }
-      const date = clean(tag(block, "pubDate") || tag(block, "published") || tag(block, "updated"));
+      const date = clean(
+        tag(block, "pubDate") || tag(block, "published") || tag(block, "updated")
+      );
       return { title, link, date };
     })
     .filter((it) => it.title);
