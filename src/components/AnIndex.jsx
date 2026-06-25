@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { num } from "../lib/format.js";
+import { AN_SOURCE } from "../config.js";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -78,19 +79,27 @@ export default function AnIndex({ log, liveEstimate, benchmark, onAdd, onRemove 
         />
       </div>
 
-      {/* Benchmark line */}
-      <div className="mb-3 rounded-lg border border-border bg-panel px-3 py-2 flex items-center justify-between">
-        <span className="text-[11px] text-muted">Market benchmark (indicative)</span>
-        {benchmark ? (
-          <span className="mono text-xs">
-            {num(benchmark.usdMt, 0)} USD/MT
-            <span className="text-faint"> · {benchmark.source}</span>
-          </span>
-        ) : (
-          <span className="text-[11px] text-faint">
-            auto-feed unavailable — log your price below
-          </span>
-        )}
+      {/* Price source: check the live price, then log it below */}
+      <div className="mb-3 rounded-lg border border-border bg-panel px-3 py-2 flex items-center justify-between gap-2">
+        <span className="text-[11px] text-muted">
+          {benchmark ? (
+            <>
+              Market benchmark{" "}
+              <span className="mono text-ink">{num(benchmark.usdMt, 0)} USD/MT</span>
+              <span className="text-faint"> · {benchmark.source}</span>
+            </>
+          ) : (
+            <>Check the live price, then log it below</>
+          )}
+        </span>
+        <a
+          href={AN_SOURCE.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0 text-xs px-3 py-1.5 rounded-md bg-brand/20 text-brand border border-brand/40 hover:bg-brand/30 transition inline-flex items-center gap-1"
+        >
+          Open {AN_SOURCE.label} ↗
+        </a>
       </div>
 
       {/* Chart */}
@@ -128,8 +137,18 @@ export default function AnIndex({ log, liveEstimate, benchmark, onAdd, onRemove 
 
       {/* Add a confirmed price */}
       <div className="rounded-lg border border-border bg-panel p-3">
-        <div className="text-[11px] uppercase tracking-wide text-faint mb-2">
-          Log a confirmed AN price
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="text-[11px] uppercase tracking-wide text-faint">
+            Log a confirmed AN price
+          </span>
+          <a
+            href={AN_SOURCE.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-brand hover:underline inline-flex items-center gap-1"
+          >
+            Check price on {AN_SOURCE.label} ↗
+          </a>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex-1 min-w-[110px]">

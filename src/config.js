@@ -4,6 +4,13 @@
 
 export const REFRESH_MS = 5 * 60 * 1000; // live feed auto-refresh: 5 min
 
+// Where staff check the live acrylonitrile price before logging it. The AN
+// Price Index shows an "Open" button linking here (opens in a new tab).
+export const AN_SOURCE = {
+  label: "ECHEMI",
+  url: "https://www.echemi.com/productsInformation/pid_Seven2451-acrylonitrile.html",
+};
+
 // ---- Reference / baseline values --------------------------------------------
 // Baselines are the anchor points the live model and Cost Pressure Index are
 // measured against. Update them as your market reference shifts.
