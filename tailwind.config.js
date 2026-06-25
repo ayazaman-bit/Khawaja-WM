@@ -3,6 +3,9 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      screens: {
+        xs: "400px", // small-phone breakpoint
+      },
       colors: {
         // Palette carried over from the original KWM dashboard.
         bg: "#1a1d27",

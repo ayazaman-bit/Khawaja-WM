@@ -35,7 +35,7 @@ export default function LiveFeed({ snap }) {
         <div className="text-[11px] uppercase tracking-wide text-faint mb-2">
           Commodities
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
           <StatCard
             label="Brent Crude"
             value={num(snap.crude.value, 2)}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 const ZONES = [
   { label: "Karachi", tz: "Asia/Karachi", flag: "🇵🇰" },
+  { label: "Beijing", tz: "Asia/Shanghai", flag: "🇨🇳" },
   { label: "London", tz: "Europe/London", flag: "🇬🇧" },
   { label: "New York", tz: "America/New_York", flag: "🇺🇸" },
 ];
