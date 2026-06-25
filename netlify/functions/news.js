@@ -12,9 +12,29 @@ const DEFAULT_FEEDS = [
   "https://feeds.finance.yahoo.com/rss/2.0/headline?s=CL=F,GC=F&region=US&lang=en-US",
 ];
 
-export default async () => {
-  const configured = env("NEWS_RSS_URL");
-  const feeds = configured ? [configured, ...DEFAULT_FEEDS] : DEFAULT_FEEDS;
+// Pakistan power / NEPRA news (topic=energy). Google News RSS is reliable and
+// server-fetchable; overridable via NEWS_ENERGY_RSS_URL.
+const ENERGY_FEEDS = [
+  "https://news.google.com/rss/search?q=" +
+    encodeURIComponent("Pakistan electricity tariff OR NEPRA OR power") +
+    "&hl=en-PK&gl=PK&ceid=PK:en",
+];
+
+export default async (req) => {
+  let topic = null;
+  try {
+    topic = new URL(req.url).searchParams.get("topic");
+  } catch {
+    /* no query */
+  }
+
+  const feeds =
+    topic === "energy"
+      ? [env("NEWS_ENERGY_RSS_URL"), ...ENERGY_FEEDS].filter(Boolean)
+      : (() => {
+          const configured = env("NEWS_RSS_URL");
+          return configured ? [configured, ...DEFAULT_FEEDS] : DEFAULT_FEEDS;
+        })();
 
   let items = [];
   let usedFeed = null;

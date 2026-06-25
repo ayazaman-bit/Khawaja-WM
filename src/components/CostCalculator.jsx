@@ -76,15 +76,32 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
           </FieldGroup>
 
           <FieldGroup title="Mill parameters">
-            {MILL_FIELDS.map((f) => (
-              <Field
-                key={f.key}
-                label={f.label}
-                value={inputs[f.key] ?? ""}
-                placeholder={`default ${CALC_DEFAULTS[f.key]}`}
-                onChange={(v) => set(f.key, v)}
-              />
-            ))}
+            {MILL_FIELDS.map((f) => {
+              const isElec = f.key === "electricityPkrKwh";
+              const hasLive = isElec && live.electricityPkrKwh != null;
+              const typed = inputs[f.key] !== "" && inputs[f.key] != null;
+              const placeholder = hasLive
+                ? `GEPCO ${num(live.electricityPkrKwh, 2)}`
+                : `default ${CALC_DEFAULTS[f.key]}`;
+              const caption = isElec
+                ? typed
+                  ? "manual override"
+                  : hasLive
+                  ? "from GEPCO tracker"
+                  : null
+                : null;
+              return (
+                <Field
+                  key={f.key}
+                  label={f.label}
+                  value={inputs[f.key] ?? ""}
+                  placeholder={placeholder}
+                  onChange={(v) => set(f.key, v)}
+                  caption={caption}
+                  captionClass={typed ? "text-warn" : "text-faint"}
+                />
+              );
+            })}
           </FieldGroup>
 
           {/* ---- Custom expenses ---- */}
@@ -299,7 +316,7 @@ function FieldGroup({ title, children }) {
   );
 }
 
-function Field({ label, value, placeholder, onChange }) {
+function Field({ label, value, placeholder, onChange, caption, captionClass }) {
   return (
     <label className="block">
       <span className="block text-[11px] text-muted mb-1">{label}</span>
@@ -311,6 +328,11 @@ function Field({ label, value, placeholder, onChange }) {
         onChange={(e) => onChange(e.target.value)}
         className="mono w-full rounded-md border border-border bg-bg px-2 py-1.5 text-sm focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand/40"
       />
+      {caption && (
+        <span className={`block text-[10px] mt-0.5 ${captionClass || "text-faint"}`}>
+          {caption}
+        </span>
+      )}
     </label>
   );
 }

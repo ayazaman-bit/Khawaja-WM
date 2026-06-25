@@ -28,7 +28,10 @@ export function computeCost(inputs, live) {
     "conversionPremiumUsdKg",
     CALC_DEFAULTS.conversionPremiumUsdKg
   );
-  const electricityPkrKwh = v("electricityPkrKwh", CALC_DEFAULTS.electricityPkrKwh);
+  const electricityPkrKwh = v(
+    "electricityPkrKwh",
+    live.electricityPkrKwh ?? CALC_DEFAULTS.electricityPkrKwh
+  );
   const energyKwhPerKg = v("energyKwhPerKg", CALC_DEFAULTS.energyKwhPerKg);
   const labourOverheadPkrKg = v(
     "labourOverheadPkrKg",

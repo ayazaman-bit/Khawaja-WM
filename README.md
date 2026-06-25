@@ -25,6 +25,10 @@ login is ever required for visitors** — it's a public web page.
   shown alongside an **indicative market benchmark** (a best-effort scrape of a
   public page, configured via `AN_BENCH_URL`) and the crude-anchored model
   estimate. Each logged price re-anchors that estimate.
+- **Electricity (GEPCO)** — log the effective PKR/kWh from your GEPCO bill; it
+  shows the current rate + trend, auto-fills the calculator's electricity field,
+  links to NEPRA notifications, and lists Pakistan power news (no backend; rates
+  live in the browser).
 - **30-day trend charts** — area charts for crude, gold and the AN estimate.
 - **Markets News** — a scrolling headline **ticker** plus a news panel, both fed
   by live oil/gold/commodities RSS (via a serverless proxy), to support

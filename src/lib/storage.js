@@ -21,6 +21,7 @@ const write = (key, value) => {
 export const KEYS = {
   anchor: "kwm.anAnchor", // legacy single anchor (migrated into anLog)
   anLog: "kwm.anLog", // [{ anUsdMt, crudeUsdBbl, date, note }] confirmed AN prices
+  elecLog: "kwm.elecLog", // [{ ratePkrKwh, date, note }] effective electricity rates
   reference: "kwm.reference", // Cost Pressure Index reference (100 = this)
   weights: "kwm.weights", // Cost Pressure Index driver weights
   calc: "kwm.calcInputs", // saved calculator overrides
@@ -37,6 +38,9 @@ export const saveWeights = (weights) => write(KEYS.weights, weights);
 
 export const loadAnLog = () => read(KEYS.anLog, []);
 export const saveAnLog = (log) => write(KEYS.anLog, log);
+
+export const loadElecLog = () => read(KEYS.elecLog, []);
+export const saveElecLog = (log) => write(KEYS.elecLog, log);
 
 export const loadCalc = () => read(KEYS.calc, {});
 export const saveCalc = (inputs) => write(KEYS.calc, inputs);

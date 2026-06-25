@@ -103,6 +103,20 @@ export async function fetchNews() {
   }
 }
 
+// ---- Pakistan power / NEPRA news via /api/news?topic=energy ----------------
+export async function fetchEnergyNews() {
+  try {
+    const res = await fetch("/api/news?topic=energy", {
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!res.ok) throw new Error(`energy news ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
 // ---- Gold unit conversions (Pakistan-local) --------------------------------
 export function goldLocal(usdOz, pkrPerUsd) {
   const pkrPerGram = (usdOz / GOLD_UNITS.gramsPerOunce) * pkrPerUsd;

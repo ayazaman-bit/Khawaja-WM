@@ -5,12 +5,14 @@ import NewsTicker from "./components/NewsTicker.jsx";
 import LiveFeed from "./components/LiveFeed.jsx";
 import CostPressure from "./components/CostPressure.jsx";
 import AnIndex from "./components/AnIndex.jsx";
+import Electricity from "./components/Electricity.jsx";
 import Charts from "./components/Charts.jsx";
 import NewsFeed from "./components/NewsFeed.jsx";
 import CostCalculator from "./components/CostCalculator.jsx";
 import {
   fetchSnapshot,
   fetchNews,
+  fetchEnergyNews,
   fetchAnBenchmark,
   costPressureIndex,
 } from "./lib/live.js";
@@ -19,6 +21,8 @@ import {
   loadAnchor,
   loadAnLog,
   saveAnLog,
+  loadElecLog,
+  saveElecLog,
   loadReference,
   saveReference,
   loadWeights,
@@ -43,7 +47,9 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [inputs, setInputs] = useState(() => loadCalc());
   const [news, setNews] = useState(null); // null = loading
+  const [energyNews, setEnergyNews] = useState(null); // PK power news
   const [benchmark, setBenchmark] = useState(null);
+  const [elecLog, setElecLog] = useState(() => loadElecLog());
   const [reference, setReference] = useState(() => loadReference() || DEFAULT_REFERENCE);
   const [weights, setWeights] = useState(() => loadWeights() || INDEX_WEIGHTS);
 
@@ -182,6 +188,21 @@ export default function App() {
     };
   }, []);
 
+  // Pakistan power / NEPRA news for the Electricity panel.
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      const items = await fetchEnergyNews();
+      if (alive) setEnergyNews(items);
+    };
+    load();
+    const id = setInterval(load, 30 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
   // AN market benchmark (best-effort), refreshed hourly.
   useEffect(() => {
     let alive = true;
@@ -224,10 +245,31 @@ export default function App() {
   // The calculator's "confirm" button logs today's price.
   const onConfirmAn = (anUsdMt) => addAnPrice(anUsdMt, todayISO(), "from calculator");
 
+  // ---- Electricity (GEPCO) effective rate log ----
+  const addElecRate = (ratePkrKwh, date, note) => {
+    const next = [
+      ...elecLog,
+      { ratePkrKwh, date: date || todayISO(), note: note || "" },
+    ].sort((a, b) => (a.date < b.date ? -1 : 1));
+    setElecLog(next);
+    saveElecLog(next);
+  };
+  const removeElecRate = (index) => {
+    const next = elecLog.filter((_, i) => i !== index);
+    setElecLog(next);
+    saveElecLog(next);
+  };
+  const elecRate = elecLog.length ? elecLog[elecLog.length - 1].ratePkrKwh : null;
+
   // Resolved live values handed to the calculator as fallbacks.
   const live = snap
-    ? { anUsdMt: snap.an, woolUsdKg: snap.wool, pkrPerUsd: snap.fx.value }
-    : { anUsdMt: 1450, woolUsdKg: 11.5, pkrPerUsd: 278 };
+    ? {
+        anUsdMt: snap.an,
+        woolUsdKg: snap.wool,
+        pkrPerUsd: snap.fx.value,
+        electricityPkrKwh: elecRate,
+      }
+    : { anUsdMt: 1450, woolUsdKg: 11.5, pkrPerUsd: 278, electricityPkrKwh: elecRate };
 
   const anyLive = !!(snap && (snap.fx.live || snap.crude.live));
 
@@ -265,6 +307,13 @@ export default function App() {
           benchmark={benchmark}
           onAdd={addAnPrice}
           onRemove={removeAnPrice}
+        />
+
+        <Electricity
+          log={elecLog}
+          news={energyNews}
+          onAdd={addElecRate}
+          onRemove={removeElecRate}
         />
 
         <Charts snap={snap} />

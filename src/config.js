@@ -11,6 +11,12 @@ export const AN_SOURCE = {
   url: "https://www.echemi.com/productsInformation/pid_Seven2451-acrylonitrile.html",
 };
 
+// NEPRA notifications (FCA/QTA decisions) — quick-link from the Electricity panel.
+export const NEPRA_SOURCE = {
+  label: "NEPRA",
+  url: "https://nepra.org.pk/",
+};
+
 // ---- Reference / baseline values --------------------------------------------
 // Baselines anchor the live "vs ref" tile badges and the AN model. They are
 // also the DEFAULT reference for the Cost Pressure Index, but the user can
