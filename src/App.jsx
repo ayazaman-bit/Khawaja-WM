@@ -14,13 +14,15 @@ import {
   fetchAnBenchmark,
   costPressureIndex,
 } from "./lib/live.js";
-import { REFRESH_MS, BASELINES } from "./config.js";
+import { REFRESH_MS, BASELINES, INDEX_WEIGHTS } from "./config.js";
 import {
   loadAnchor,
   loadAnLog,
   saveAnLog,
   loadReference,
   saveReference,
+  loadWeights,
+  saveWeights,
   loadCalc,
   saveCalc,
 } from "./lib/storage.js";
@@ -43,6 +45,7 @@ export default function App() {
   const [news, setNews] = useState(null); // null = loading
   const [benchmark, setBenchmark] = useState(null);
   const [reference, setReference] = useState(() => loadReference() || DEFAULT_REFERENCE);
+  const [weights, setWeights] = useState(() => loadWeights() || INDEX_WEIGHTS);
 
   // Confirmed AN prices (ascending by date). Migrate any legacy single anchor.
   const [anLog, setAnLog] = useState(() => {
@@ -95,9 +98,10 @@ export default function App() {
         wool: snap.wool,
         fx: snap.fx.value,
       },
-      reference
+      reference,
+      weights
     );
-  }, [snap, anForIndex, reference]);
+  }, [snap, anForIndex, reference, weights]);
 
   // Append each refresh's index to the sparkline history.
   useEffect(() => {
@@ -126,6 +130,20 @@ export default function App() {
     const next = { ...reference, [field]: n };
     setReference(next);
     saveReference(next);
+  };
+
+  // Edit a single driver weight.
+  const updateWeight = (field, value) => {
+    const n = Number(value);
+    if (value === "" || Number.isNaN(n) || n < 0) return;
+    const next = { ...weights, [field]: n };
+    setWeights(next);
+    saveWeights(next);
+  };
+
+  const resetWeights = () => {
+    setWeights(INDEX_WEIGHTS);
+    saveWeights(INDEX_WEIGHTS);
   };
 
   const refresh = useCallback(async () => {
@@ -233,8 +251,11 @@ export default function App() {
             index={index}
             history={history}
             reference={reference}
+            weights={weights}
             onSetToday={setReferenceToday}
             onEditReference={updateReference}
+            onEditWeight={updateWeight}
+            onResetWeights={resetWeights}
           />
         </div>
 

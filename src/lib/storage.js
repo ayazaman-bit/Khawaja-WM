@@ -22,6 +22,7 @@ export const KEYS = {
   anchor: "kwm.anAnchor", // legacy single anchor (migrated into anLog)
   anLog: "kwm.anLog", // [{ anUsdMt, crudeUsdBbl, date, note }] confirmed AN prices
   reference: "kwm.reference", // Cost Pressure Index reference (100 = this)
+  weights: "kwm.weights", // Cost Pressure Index driver weights
   calc: "kwm.calcInputs", // saved calculator overrides
 };
 
@@ -30,6 +31,9 @@ export const saveAnchor = (anchor) => write(KEYS.anchor, anchor);
 
 export const loadReference = () => read(KEYS.reference, null);
 export const saveReference = (reference) => write(KEYS.reference, reference);
+
+export const loadWeights = () => read(KEYS.weights, null);
+export const saveWeights = (weights) => write(KEYS.weights, weights);
 
 export const loadAnLog = () => read(KEYS.anLog, []);
 export const saveAnLog = (log) => write(KEYS.anLog, log);
