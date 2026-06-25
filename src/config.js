@@ -18,14 +18,15 @@ export const NEPRA_SOURCE = {
 };
 
 // ---- Reference / baseline values --------------------------------------------
-// Baselines anchor the live "vs ref" tile badges and the AN model. They are
-// also the DEFAULT reference for the Cost Pressure Index, but the user can
-// re-base that index in the UI ("Set today as reference" / edit budget values).
+// Baselines anchor the AN-from-crude model and serve as default fallbacks for
+// the calculator's manual fibre prices (wool/polyester/nylon have no live feed).
 export const BASELINES = {
   crudeUsdBbl: 78, // Brent crude reference (USD/bbl)
   crudeWtiUsdBbl: 72, // WTI crude reference (USD/bbl)
   anUsdMt: 1450, // Acrylonitrile reference (USD/MT)
   woolUsdKg: 11.5, // Wool reference, clean basis (USD/kg)
+  polyesterUsdKg: 1.5, // Polyester staple fibre reference (USD/kg) — manual
+  nylonUsdKg: 2.8, // Nylon staple fibre reference (USD/kg) — manual
   goldUsdOz: 2350, // Gold reference (USD per troy ounce)
   pkrPerUsd: 278, // PKR per 1 USD reference
   pkrPerGbp: 352, // PKR per 1 GBP reference
@@ -51,9 +52,14 @@ export const AN_MODEL = {
 // These seed the calculator inputs. Any field the user clears falls back to the
 // live feed (for the market-driven ones) or to these defaults.
 export const CALC_DEFAULTS = {
-  acrylicContentPct: 70, // % acrylic in the blend (rest is wool)
+  // Blend composition: set the non-acrylic fibre %s; acrylic is the remainder.
+  // Defaults to 100% acrylic (the mill's flagship product).
+  woolPct: 0, // % wool in the blend
+  polyesterPct: 0, // % polyester in the blend
+  nylonPct: 0, // % nylon in the blend
   anPerKgAcrylic: 1.05, // kg acrylonitrile per kg acrylic fibre
   conversionPremiumUsdKg: 0.95, // monomer -> fibre conversion premium (USD/kg)
+  dyeingPkrKg: 30, // in-house dyeing + chemicals (PKR/kg)
   electricityPkrKwh: 38, // PKR per kWh
   energyKwhPerKg: 4.2, // kWh per kg yarn
   labourOverheadPkrKg: 95, // labour + overhead (PKR/kg)

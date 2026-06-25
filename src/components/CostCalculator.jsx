@@ -5,16 +5,25 @@ import { pkr, num } from "../lib/format.js";
 
 const MARKET_FIELDS = [
   { key: "anUsdMt", label: "AN price (USD/MT)", liveKey: "anUsdMt", dp: 0, live: true },
-  // Wool has no free live feed — this is a manual figure the mill sets from its
-  // own purchase price, pre-filled with a sensible default.
+  // Wool/polyester/nylon have no free live feed — these are manual figures the
+  // mill sets from its own purchase price, pre-filled with sensible defaults.
   { key: "woolUsdKg", label: "Wool (USD/kg)", liveKey: "woolUsdKg", dp: 2, live: false },
+  { key: "polyesterUsdKg", label: "Polyester (USD/kg)", liveKey: "polyesterUsdKg", dp: 2, live: false },
+  { key: "nylonUsdKg", label: "Nylon (USD/kg)", liveKey: "nylonUsdKg", dp: 2, live: false },
   { key: "pkrPerUsd", label: "PKR / USD", liveKey: "pkrPerUsd", dp: 2, live: true },
 ];
 
+// Non-acrylic blend percentages; acrylic fills the remainder.
+const BLEND_FIELDS = [
+  { key: "woolPct", label: "Wool (%)" },
+  { key: "polyesterPct", label: "Polyester (%)" },
+  { key: "nylonPct", label: "Nylon (%)" },
+];
+
 const MILL_FIELDS = [
-  { key: "acrylicContentPct", label: "Acrylic fibre content (%)" },
   { key: "anPerKgAcrylic", label: "AN per kg acrylic" },
   { key: "conversionPremiumUsdKg", label: "Fibre conversion premium (USD/kg)" },
+  { key: "dyeingPkrKg", label: "Dyeing + chemicals (PKR/kg)" },
   { key: "electricityPkrKwh", label: "Electricity rate (PKR/unit)" },
   { key: "energyKwhPerKg", label: "Units used per kg (kWh)" },
   { key: "labourOverheadPkrKg", label: "Labour + overhead (PKR/kg)" },
@@ -24,6 +33,7 @@ const MILL_FIELDS = [
 export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, anchor }) {
   const [mode, setMode] = useState("perKg"); // "perKg" | "perOrder"
   const result = useMemo(() => computeCost(inputs, live), [inputs, live]);
+  const acrylicPct = result.resolved.acrylicContentPct;
 
   const set = (key, value) => setInputs({ ...inputs, [key]: value });
   const reset = () => setInputs({});
@@ -77,6 +87,32 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
               />
             ))}
           </FieldGroup>
+
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-faint mb-2">
+              Blend composition (acrylic = remainder)
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {BLEND_FIELDS.map((f) => (
+                <Field
+                  key={f.key}
+                  label={f.label}
+                  value={inputs[f.key] ?? ""}
+                  placeholder={`default ${CALC_DEFAULTS[f.key]}`}
+                  onChange={(v) => set(f.key, v)}
+                />
+              ))}
+            </div>
+            <p
+              className={`text-[11px] mt-1 ${
+                acrylicPct <= 0 ? "text-warn" : "text-muted"
+              }`}
+            >
+              Acrylic (remainder):{" "}
+              <span className="mono text-ink">{acrylicPct}%</span>
+              {acrylicPct <= 0 && " — blend exceeds 100%"}
+            </p>
+          </div>
 
           <FieldGroup title="Mill parameters">
             {MILL_FIELDS.map((f) => {

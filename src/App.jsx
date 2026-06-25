@@ -185,10 +185,19 @@ export default function App() {
     ? {
         anUsdMt: snap.an,
         woolUsdKg: snap.wool,
+        polyesterUsdKg: BASELINES.polyesterUsdKg,
+        nylonUsdKg: BASELINES.nylonUsdKg,
         pkrPerUsd: snap.fx.value,
         electricityPkrKwh: elecRate,
       }
-    : { anUsdMt: 1450, woolUsdKg: 11.5, pkrPerUsd: 278, electricityPkrKwh: elecRate };
+    : {
+        anUsdMt: BASELINES.anUsdMt,
+        woolUsdKg: BASELINES.woolUsdKg,
+        polyesterUsdKg: BASELINES.polyesterUsdKg,
+        nylonUsdKg: BASELINES.nylonUsdKg,
+        pkrPerUsd: BASELINES.pkrPerUsd,
+        electricityPkrKwh: elecRate,
+      };
 
   const anyLive = !!(snap && (snap.fx.live || snap.crude.live));
 

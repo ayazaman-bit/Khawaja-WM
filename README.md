@@ -32,8 +32,9 @@ login is ever required for visitors** — it's a public web page.
   by live oil/gold/commodities RSS (via a serverless proxy), to support
   buying/pricing decisions.
 - **Yarn Cost Calculator** — two modes:
-  - **Per kg** — enter your own costs (AN price, electricity, labour, margin,
-    blend) plus **your own expense lines** (packaging, freight, dyeing, rent…).
+  - **Per kg** — enter your own costs (AN price, electricity, labour, margin, a
+    configurable **acrylic / wool / polyester / nylon blend**, and a **dyeing +
+    chemicals** line) plus **your own expense lines** (packaging, freight, rent…).
     Get a full **Estimated Cost Breakdown**, **cost of production (PKR/kg)** and
     **suggested sell price**. Empty fields fall back to the live feed or mill
     defaults.
@@ -51,7 +52,7 @@ login is ever required for visitors** — it's a public web page.
 | Acrylonitrile (index) | Prices you log in-app (most accurate) | No |
 | Acrylonitrile (benchmark) | Scrape via `netlify/functions/anbench.js` (`AN_BENCH_URL`) | No |
 | Acrylonitrile (estimate) | Modelled from crude (`AN_MODEL` in `src/config.js`) | — |
-| Wool | Manual input in the calculator (no free feed; set your purchase price) | — |
+| Wool / Polyester / Nylon | Manual inputs in the calculator (no free feed; set your purchase price) | — |
 | Markets news | RSS via `netlify/functions/news.js` (configurable `NEWS_RSS_URL`) | No |
 
 ### Why gold/crude are proxied (and AN isn't a direct feed)
@@ -125,7 +126,7 @@ src/
     live.js                 FX + gold/crude fetch, gold units, AN model, index
     costModel.js            Cost breakdown, expenses, per-kg & per-order totals
     storage.js, format.js   Persistence + formatting helpers
-  components/               Banner, LiveFeed, CostPressure, CostCalculator, …
+  components/               Banner, LiveFeed, AnIndex, Electricity, CostCalculator, …
 netlify/functions/markets.js  Gold + crude proxy (one key server-side, CORS)
 netlify.toml, public/_redirects   Deploy + routing config
 ```
