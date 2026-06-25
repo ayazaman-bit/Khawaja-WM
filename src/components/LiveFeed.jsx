@@ -1,8 +1,5 @@
 import StatCard from "./StatCard.jsx";
-import { BASELINES } from "../config.js";
 import { num } from "../lib/format.js";
-
-const change = (now, base) => ((now - base) / base) * 100;
 
 // Grid of live market tiles derived from the snapshot.
 export default function LiveFeed({ snap }) {
@@ -13,10 +10,10 @@ export default function LiveFeed({ snap }) {
 
   const fx = snap.fxAll;
   const currencies = [
-    { label: "PKR / USD", o: fx.usd, base: BASELINES.pkrPerUsd },
-    { label: "PKR / GBP", o: fx.gbp, base: BASELINES.pkrPerGbp },
-    { label: "PKR / EUR", o: fx.eur, base: BASELINES.pkrPerEur },
-    { label: "PKR / Yuan", o: fx.cny, base: BASELINES.pkrPerCny },
+    { label: "PKR / USD", o: fx.usd },
+    { label: "PKR / GBP", o: fx.gbp },
+    { label: "PKR / EUR", o: fx.eur },
+    { label: "PKR / Yuan", o: fx.cny },
   ];
 
   return (
@@ -25,7 +22,7 @@ export default function LiveFeed({ snap }) {
         <h2 className="text-sm font-semibold">Live Feed</h2>
         <span className="text-[11px] text-muted">
           {snap.crude.source === "fallback" && snap.gold.source === "fallback"
-            ? "set MARKETS_API_KEY for live gold & oil"
+            ? "set MARKETS_API_KEY for live gold"
             : `crude: ${src(snap.crude)}`}
         </span>
       </div>
@@ -40,7 +37,6 @@ export default function LiveFeed({ snap }) {
             label="Brent Crude"
             value={num(snap.crude.value, 2)}
             unit="USD/bbl"
-            change={change(snap.crude.value, BASELINES.crudeUsdBbl)}
             live={snap.crude.live}
             tag={snap.crude.live ? "LIVE" : "EST"}
           />
@@ -48,7 +44,6 @@ export default function LiveFeed({ snap }) {
             label="WTI Crude"
             value={num(snap.wti.value, 2)}
             unit="USD/bbl"
-            change={change(snap.wti.value, BASELINES.crudeWtiUsdBbl)}
             live={snap.wti.live}
             tag={snap.wti.live ? "LIVE" : "EST"}
           />
@@ -56,7 +51,6 @@ export default function LiveFeed({ snap }) {
             label="Gold"
             value={num(snap.gold.value, 0)}
             unit="USD/oz"
-            change={change(snap.gold.value, BASELINES.goldUsdOz)}
             live={snap.gold.live}
             tag={snap.gold.live ? "LIVE" : "EST"}
             subtext={`Rs ${num(snap.gold.local.pkrPerTola, 0)}/tola · Rs ${num(
@@ -68,7 +62,6 @@ export default function LiveFeed({ snap }) {
             label="Acrylonitrile"
             value={num(snap.an, 0)}
             unit="USD/MT"
-            change={change(snap.an, BASELINES.anUsdMt)}
             live={false}
             tag={snap.anchored ? "ANCHORED" : "AUTO-CRUDE"}
           />
@@ -87,7 +80,6 @@ export default function LiveFeed({ snap }) {
               label={c.label}
               value={num(c.o.value, 2)}
               unit="PKR"
-              change={change(c.o.value, c.base)}
               live={c.o.live}
               tag={c.o.live ? "LIVE" : "EST"}
             />
