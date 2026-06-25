@@ -13,8 +13,8 @@ const MILL_FIELDS = [
   { key: "acrylicContentPct", label: "Acrylic fibre content (%)" },
   { key: "anPerKgAcrylic", label: "AN per kg acrylic" },
   { key: "conversionPremiumUsdKg", label: "Fibre conversion premium (USD/kg)" },
-  { key: "electricityPkrKwh", label: "Electricity (PKR/kWh)" },
-  { key: "energyKwhPerKg", label: "Energy per kg (kWh)" },
+  { key: "electricityPkrKwh", label: "Electricity rate (PKR/unit)" },
+  { key: "energyKwhPerKg", label: "Units used per kg (kWh)" },
   { key: "labourOverheadPkrKg", label: "Labour + overhead (PKR/kg)" },
   { key: "targetMarginPct", label: "Target margin (%)" },
 ];
@@ -103,6 +103,14 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
               );
             })}
           </FieldGroup>
+
+          <p className="text-[11px] text-muted -mt-1">
+            ⚡ Energy cost ≈{" "}
+            <span className="mono text-ink">
+              {pkr(result.breakdown.find((b) => b.label === "Energy")?.value ?? 0, 1)}
+            </span>
+            /kg <span className="text-faint">(rate × units used)</span>
+          </p>
 
           {/* ---- Custom expenses ---- */}
           <div>
