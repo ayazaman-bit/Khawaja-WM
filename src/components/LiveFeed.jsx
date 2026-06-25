@@ -16,7 +16,7 @@ export default function LiveFeed({ snap }) {
     { label: "PKR / USD", o: fx.usd, base: BASELINES.pkrPerUsd },
     { label: "PKR / GBP", o: fx.gbp, base: BASELINES.pkrPerGbp },
     { label: "PKR / EUR", o: fx.eur, base: BASELINES.pkrPerEur },
-    { label: "PKR / AED", o: fx.aed, base: BASELINES.pkrPerAed },
+    { label: "PKR / Yuan", o: fx.cny, base: BASELINES.pkrPerCny },
   ];
 
   return (

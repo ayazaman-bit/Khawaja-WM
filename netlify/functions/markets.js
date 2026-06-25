@@ -99,7 +99,10 @@ async function series(symbol, key) {
   }
 }
 
-// ---- EIA (optional): overrides current crude price -------------------------
+// ---- EIA (optional): current crude price + 30-day history ------------------
+// Twelve Data's free plan doesn't serve Brent history, so when an EIA key is
+// present we source both the latest crude price AND the chart series from the
+// EIA (free, reliable government feed).
 async function fillEia(out) {
   const key = env("EIA_API_KEY");
   if (!key) return;
@@ -107,20 +110,27 @@ async function fillEia(out) {
     const url =
       "https://api.eia.gov/v2/petroleum/pri/spt/data/" +
       "?frequency=daily&data[0]=value&facets[series][]=RBRTE" +
-      "&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=1" +
+      `&sort[0][column]=period&sort[0][direction]=desc&offset=0&length=${HISTORY_DAYS + 1}` +
       `&api_key=${key}`;
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`EIA ${res.status}`);
     const data = await res.json();
-    const row = data?.response?.data?.[0];
-    const price = row ? Number(row.value) : null;
-    if (price > 0) {
-      out.crude = {
-        ...out.crude,
-        usdBbl: price,
-        source: "EIA Brent spot (RBRTE)",
-        asOf: row.period || out.crude.asOf,
-      };
+    const rows = data?.response?.data;
+    if (Array.isArray(rows) && rows.length) {
+      // EIA returns newest-first; reverse to ascending for the chart.
+      const series = rows
+        .map((r) => ({ t: r.period, v: Number(r.value) }))
+        .filter((p) => p.v > 0)
+        .reverse();
+      if (series.length) {
+        const last = series[series.length - 1];
+        out.crude = {
+          usdBbl: last.v,
+          source: "EIA Brent spot (RBRTE)",
+          asOf: last.t,
+          series,
+        };
+      }
     }
   } catch (err) {
     out.notes.push(`EIA error: ${String(err.message || err)}`);

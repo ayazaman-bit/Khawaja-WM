@@ -20,6 +20,7 @@ export default function Charts({ snap }) {
           unit="USD/bbl"
           color="#3b82f6"
           data={snap.crude.series}
+          current={snap.crude.value}
           dp={1}
           live={snap.crude.live}
         />
@@ -28,6 +29,7 @@ export default function Charts({ snap }) {
           unit="USD/oz"
           color="#f59e0b"
           data={snap.gold.series}
+          current={snap.gold.value}
           dp={0}
           live={snap.gold.live}
         />
@@ -36,6 +38,7 @@ export default function Charts({ snap }) {
           unit="USD/MT"
           color="#a78bfa"
           data={snap.anSeries}
+          current={snap.an}
           dp={0}
           live={false}
         />
@@ -44,10 +47,11 @@ export default function Charts({ snap }) {
   );
 }
 
-function TrendCard({ title, unit, color, data, dp, live }) {
+function TrendCard({ title, unit, color, data, current, dp, live }) {
   const valid = Array.isArray(data) && data.length > 1;
   const first = valid ? data[0].v : null;
   const last = valid ? data[data.length - 1].v : null;
+  const headline = current != null ? current : last;
   const changePct = valid && first ? ((last - first) / first) * 100 : null;
   const up = changePct != null && changePct >= 0;
 
@@ -57,7 +61,7 @@ function TrendCard({ title, unit, color, data, dp, live }) {
         <div>
           <div className="text-xs text-muted">{title}</div>
           <div className="mono text-lg font-semibold">
-            {valid ? num(last, dp) : "—"}{" "}
+            {headline != null ? num(headline, dp) : "—"}{" "}
             <span className="text-[11px] text-muted">{unit}</span>
           </div>
         </div>
@@ -114,7 +118,7 @@ function TrendCard({ title, unit, color, data, dp, live }) {
           </ResponsiveContainer>
         ) : (
           <div className="h-full flex items-center justify-center text-[11px] text-faint">
-            history loads once the live key is set
+            30-day history unavailable
           </div>
         )}
       </div>

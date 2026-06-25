@@ -15,7 +15,7 @@ export const BASELINES = {
   pkrPerUsd: 278, // PKR per 1 USD reference
   pkrPerGbp: 352, // PKR per 1 GBP reference
   pkrPerEur: 300, // PKR per 1 EUR reference
-  pkrPerAed: 76, // PKR per 1 AED reference
+  pkrPerCny: 39, // PKR per 1 CNY (Yuan) reference
 };
 
 // Unit conversions for displaying gold in Pakistan-local units.

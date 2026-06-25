@@ -88,7 +88,7 @@ export default function AnIndex({ log, liveEstimate, benchmark, onAdd, onRemove 
           </span>
         ) : (
           <span className="text-[11px] text-faint">
-            unavailable — set AN_BENCH_URL
+            auto-feed unavailable — log your price below
           </span>
         )}
       </div>

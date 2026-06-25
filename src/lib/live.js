@@ -9,14 +9,14 @@ const FX_URL = "https://api.exchangerate-api.com/v4/latest/USD";
 // Same-origin function, rewritten to the markets function in netlify.toml.
 const MARKETS_URL = "/api/markets";
 
-// ---- FX (PKR per USD, GBP, EUR, AED) ---------------------------------------
+// ---- FX (PKR per USD, GBP, EUR, CNY) ---------------------------------------
 // ExchangeRate-API returns all rates against a USD base, so PKR per <CCY> is
 // simply the PKR rate divided by that currency's rate.
 const FX_BASELINE = {
   usd: BASELINES.pkrPerUsd,
   gbp: BASELINES.pkrPerGbp,
   eur: BASELINES.pkrPerEur,
-  aed: BASELINES.pkrPerAed,
+  cny: BASELINES.pkrPerCny,
 };
 
 async function fetchFx() {
@@ -35,7 +35,7 @@ async function fetchFx() {
         usd: { value: pkr, live: true },
         gbp: per("GBP", FX_BASELINE.gbp),
         eur: per("EUR", FX_BASELINE.eur),
-        aed: per("AED", FX_BASELINE.aed),
+        cny: per("CNY", FX_BASELINE.cny),
       };
     }
   } catch {
@@ -45,7 +45,7 @@ async function fetchFx() {
     usd: { value: FX_BASELINE.usd, live: false },
     gbp: { value: FX_BASELINE.gbp, live: false },
     eur: { value: FX_BASELINE.eur, live: false },
-    aed: { value: FX_BASELINE.aed, live: false },
+    cny: { value: FX_BASELINE.cny, live: false },
   };
 }
 
@@ -160,7 +160,7 @@ export async function fetchSnapshot(anchor) {
   return {
     at: Date.now(),
     fx: fx.usd, // PKR/USD { value, live } (used by the cost model)
-    fxAll: fx, // { usd, gbp, eur, aed } each { value, live }
+    fxAll: fx, // { usd, gbp, eur, cny } each { value, live }
     crude, // { value, live, source, asOf }
     gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
     an, // USD/MT
