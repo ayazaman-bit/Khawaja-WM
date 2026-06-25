@@ -2,7 +2,7 @@
 // our own serverless proxy (which keeps the single API key server-side), plus a
 // crude-anchored acrylonitrile estimate.
 
-import { BASELINES, AN_MODEL, INDEX_WEIGHTS, GOLD_UNITS } from "../config.js";
+import { BASELINES, AN_MODEL, GOLD_UNITS } from "../config.js";
 
 const FX_URL = "https://api.exchangerate-api.com/v4/latest/USD";
 
@@ -143,32 +143,6 @@ export function estimateAn(crudeNow, anchor) {
   const crudeRatio = crudeNow / base.crudeUsdBbl;
   const estimate = base.anUsdMt * (1 + AN_MODEL.beta * (crudeRatio - 1));
   return Math.max(0, estimate);
-}
-
-// ---- Cost Pressure Index ----------------------------------------------------
-// Weighted level of each cost driver vs a reference, scaled to 100 = reference.
-// The reference defaults to BASELINES but the user can re-base it (see App).
-// (Gold is a watch item, not a yarn cost driver, so it is excluded here.)
-export function costPressureIndex(
-  { crude, an, wool, fx },
-  reference = BASELINES,
-  weights = INDEX_WEIGHTS
-) {
-  const ref = reference || BASELINES;
-  const w = weights || INDEX_WEIGHTS;
-  const r = {
-    crude: crude / ref.crudeUsdBbl,
-    an: an / ref.anUsdMt,
-    wool: wool / ref.woolUsdKg,
-    fx: fx / ref.pkrPerUsd,
-  };
-  // Normalise by the weight sum so the index stays anchored at 100 = reference
-  // no matter what the user's weights add up to.
-  const wsum = w.crude + w.an + w.wool + w.fx || 1;
-  const index =
-    (100 * (w.crude * r.crude + w.an * r.an + w.wool * r.wool + w.fx * r.fx)) /
-    wsum;
-  return Math.round(index * 10) / 10;
 }
 
 // ---- Aggregate snapshot -----------------------------------------------------

@@ -4,9 +4,11 @@ import { CALC_DEFAULTS } from "../config.js";
 import { pkr, num } from "../lib/format.js";
 
 const MARKET_FIELDS = [
-  { key: "anUsdMt", label: "AN price (USD/MT)", liveKey: "anUsdMt", dp: 0 },
-  { key: "woolUsdKg", label: "Wool (USD/kg)", liveKey: "woolUsdKg", dp: 2 },
-  { key: "pkrPerUsd", label: "PKR / USD", liveKey: "pkrPerUsd", dp: 2 },
+  { key: "anUsdMt", label: "AN price (USD/MT)", liveKey: "anUsdMt", dp: 0, live: true },
+  // Wool has no free live feed — this is a manual figure the mill sets from its
+  // own purchase price, pre-filled with a sensible default.
+  { key: "woolUsdKg", label: "Wool (USD/kg)", liveKey: "woolUsdKg", dp: 2, live: false },
+  { key: "pkrPerUsd", label: "PKR / USD", liveKey: "pkrPerUsd", dp: 2, live: true },
 ];
 
 const MILL_FIELDS = [
@@ -69,8 +71,9 @@ export default function CostCalculator({ live, inputs, setInputs, onConfirmAn, a
                 key={f.key}
                 label={f.label}
                 value={inputs[f.key] ?? ""}
-                placeholder={`live ${num(live[f.liveKey], f.dp)}`}
+                placeholder={`${f.live ? "live" : "default"} ${num(live[f.liveKey], f.dp)}`}
                 onChange={(v) => set(f.key, v)}
+                caption={f.live === false ? "manual — your purchase price" : null}
               />
             ))}
           </FieldGroup>

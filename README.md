@@ -11,14 +11,12 @@ login is ever required for visitors** — it's a public web page.
 ## Features
 
 - **Khawaja Woollen Mills banner** with a live/offline status indicator.
-- **World clocks** — live Karachi / London / New York times.
+- **World clocks** — live Karachi / Beijing / London / New York times.
 - **Live Feed** (watchlist tiles)
   - **Gold** — USD/oz with **PKR/tola** and **PKR/10g** conversion at the live rate.
-  - **Brent crude** — live, the macro driver behind acrylic.
+  - **Brent & WTI crude** — live futures (~15-min delayed), the macro driver behind acrylic.
   - **Acrylonitrile (AN)** — see the **AN Price Index** below.
-  - **Currencies** — live **PKR/USD, PKR/GBP, PKR/EUR, PKR/AED**, no key.
-  - **Cost Pressure Index** — a weighted crude · AN · wool · FX gauge with a
-    **HIGH PRESSURE** alarm banner.
+  - **Currencies** — live **PKR/USD, PKR/GBP, PKR/EUR, PKR/Yuan**, no key.
 - **Acrylonitrile Price Index** — there is **no free live AN feed anywhere**, so
   the accurate index is built from the **confirmed prices you log** (price +
   date + supplier note), shown as a real trend chart with latest/average. It's
@@ -48,12 +46,12 @@ login is ever required for visitors** — it's a public web page.
 | Signal | Source | Key needed? |
 |---|---|---|
 | Gold (USD/oz → PKR/tola) | Twelve Data via `netlify/functions/markets.js` | Yes — free `MARKETS_API_KEY` |
-| Brent crude | Twelve Data (or EIA if `EIA_API_KEY` set) | Yes — same `MARKETS_API_KEY` |
+| Brent & WTI crude | Yahoo Finance futures (BZ=F / CL=F); EIA Brent fallback if `EIA_API_KEY` set | No |
 | PKR/USD, PKR/GBP | `api.exchangerate-api.com` (client-side) | No |
 | Acrylonitrile (index) | Prices you log in-app (most accurate) | No |
 | Acrylonitrile (benchmark) | Scrape via `netlify/functions/anbench.js` (`AN_BENCH_URL`) | No |
 | Acrylonitrile (estimate) | Modelled from crude (`AN_MODEL` in `src/config.js`) | — |
-| Wool (EMI) | Reference baseline (no free feed) | — |
+| Wool | Manual input in the calculator (no free feed; set your purchase price) | — |
 | Markets news | RSS via `netlify/functions/news.js` (configurable `NEWS_RSS_URL`) | No |
 
 ### Why gold/crude are proxied (and AN isn't a direct feed)
@@ -113,8 +111,8 @@ function — Netlify Functions, or an equivalent serverless platform.)
 ## Tuning the model
 
 Everything lives in **`src/config.js`** — baselines, the AN-from-crude
-elasticity, Cost Pressure Index weights, the alarm threshold, and the calculator
-defaults. Adjust these to match your mill and market reference.
+elasticity, and the calculator defaults. Adjust these to match your mill and
+market reference.
 
 ## Project layout
 

@@ -47,18 +47,6 @@ export const AN_MODEL = {
   beta: 0.85,
 };
 
-// ---- Cost Pressure Index weights --------------------------------------------
-// Each driver's % deviation from its baseline is weighted into a 0-centred
-// pressure score (100 = at baseline). Weights should sum to ~1.
-export const INDEX_WEIGHTS = {
-  crude: 0.35,
-  an: 0.3,
-  wool: 0.2,
-  fx: 0.15,
-};
-
-export const PRESSURE_ALARM = 108; // index above this => HIGH PRESSURE banner
-
 // ---- Yarn cost calculator defaults ------------------------------------------
 // These seed the calculator inputs. Any field the user clears falls back to the
 // live feed (for the market-driven ones) or to these defaults.
