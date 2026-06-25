@@ -124,14 +124,16 @@ export function estimateAn(crudeNow, anchor) {
 }
 
 // ---- Cost Pressure Index ----------------------------------------------------
-// Weighted level of each cost driver vs baseline, scaled to 100 = at baseline.
+// Weighted level of each cost driver vs a reference, scaled to 100 = reference.
+// The reference defaults to BASELINES but the user can re-base it (see App).
 // (Gold is a watch item, not a yarn cost driver, so it is excluded here.)
-export function costPressureIndex({ crude, an, wool, fx }) {
+export function costPressureIndex({ crude, an, wool, fx }, reference = BASELINES) {
+  const ref = reference || BASELINES;
   const r = {
-    crude: crude / BASELINES.crudeUsdBbl,
-    an: an / BASELINES.anUsdMt,
-    wool: wool / BASELINES.woolUsdKg,
-    fx: fx / BASELINES.pkrPerUsd,
+    crude: crude / ref.crudeUsdBbl,
+    an: an / ref.anUsdMt,
+    wool: wool / ref.woolUsdKg,
+    fx: fx / ref.pkrPerUsd,
   };
   const w = INDEX_WEIGHTS;
   const index =
@@ -151,22 +153,17 @@ export async function fetchSnapshot(anchor) {
     v: estimateAn(p.v, anchor),
   }));
   const wool = BASELINES.woolUsdKg; // no free wool feed; held at baseline
-  const index = costPressureIndex({
-    crude: crude.value,
-    an,
-    wool,
-    fx: fx.usd.value,
-  });
+  // The Cost Pressure Index is derived in App (so re-basing the reference and
+  // logging AN prices recompute it instantly, without a refetch).
   return {
     at: Date.now(),
     fx: fx.usd, // PKR/USD { value, live } (used by the cost model)
     fxAll: fx, // { usd, gbp, eur, cny } each { value, live }
     crude, // { value, live, source, asOf }
     gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
-    an, // USD/MT
+    an, // USD/MT (crude-anchored estimate)
     anSeries, // [{ t, v }] derived from crude
     wool, // USD/kg
-    index,
     anchored: !!anchor,
   };
 }

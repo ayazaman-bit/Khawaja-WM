@@ -8,17 +8,32 @@ import AnIndex from "./components/AnIndex.jsx";
 import Charts from "./components/Charts.jsx";
 import NewsFeed from "./components/NewsFeed.jsx";
 import CostCalculator from "./components/CostCalculator.jsx";
-import { fetchSnapshot, fetchNews, fetchAnBenchmark } from "./lib/live.js";
+import {
+  fetchSnapshot,
+  fetchNews,
+  fetchAnBenchmark,
+  costPressureIndex,
+} from "./lib/live.js";
 import { REFRESH_MS, BASELINES } from "./config.js";
 import {
   loadAnchor,
   loadAnLog,
   saveAnLog,
+  loadReference,
+  saveReference,
   loadCalc,
   saveCalc,
 } from "./lib/storage.js";
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
+
+const DEFAULT_REFERENCE = {
+  crudeUsdBbl: BASELINES.crudeUsdBbl,
+  anUsdMt: BASELINES.anUsdMt,
+  woolUsdKg: BASELINES.woolUsdKg,
+  pkrPerUsd: BASELINES.pkrPerUsd,
+  setAt: null,
+};
 
 export default function App() {
   const [snap, setSnap] = useState(null);
@@ -27,6 +42,7 @@ export default function App() {
   const [inputs, setInputs] = useState(() => loadCalc());
   const [news, setNews] = useState(null); // null = loading
   const [benchmark, setBenchmark] = useState(null);
+  const [reference, setReference] = useState(() => loadReference() || DEFAULT_REFERENCE);
 
   // Confirmed AN prices (ascending by date). Migrate any legacy single anchor.
   const [anLog, setAnLog] = useState(() => {
@@ -61,9 +77,55 @@ export default function App() {
   const anchorRef = useRef(anchor);
   anchorRef.current = anchor;
 
-  const applySnapshot = (s) => {
-    setSnap(s);
-    setHistory((h) => [...h, s.index].slice(-40));
+  const applySnapshot = (s) => setSnap(s);
+
+  // AN value the index uses: the latest confirmed price if logged, else the
+  // crude-anchored estimate.
+  const anForIndex =
+    anLog.length ? anLog[anLog.length - 1].anUsdMt : snap?.an ?? null;
+
+  // Cost Pressure Index, recomputed instantly when the snapshot, the user's
+  // reference, or the logged AN price changes.
+  const index = useMemo(() => {
+    if (!snap) return 100;
+    return costPressureIndex(
+      {
+        crude: snap.crude.value,
+        an: anForIndex ?? snap.an,
+        wool: snap.wool,
+        fx: snap.fx.value,
+      },
+      reference
+    );
+  }, [snap, anForIndex, reference]);
+
+  // Append each refresh's index to the sparkline history.
+  useEffect(() => {
+    if (snap) setHistory((h) => [...h, index].slice(-40));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snap]);
+
+  // Re-base the index reference to today's live values.
+  const setReferenceToday = () => {
+    if (!snap) return;
+    const next = {
+      crudeUsdBbl: snap.crude.value,
+      anUsdMt: anForIndex ?? snap.an,
+      woolUsdKg: snap.wool,
+      pkrPerUsd: snap.fx.value,
+      setAt: Date.now(),
+    };
+    setReference(next);
+    saveReference(next);
+  };
+
+  // Manually edit a single reference value (budget mode).
+  const updateReference = (field, value) => {
+    const n = Number(value);
+    if (value === "" || Number.isNaN(n) || n <= 0) return;
+    const next = { ...reference, [field]: n };
+    setReference(next);
+    saveReference(next);
   };
 
   const refresh = useCallback(async () => {
@@ -167,7 +229,13 @@ export default function App() {
           <div className="lg:col-span-2">
             <LiveFeed snap={snap} />
           </div>
-          <CostPressure index={snap?.index ?? 100} history={history} />
+          <CostPressure
+            index={index}
+            history={history}
+            reference={reference}
+            onSetToday={setReferenceToday}
+            onEditReference={updateReference}
+          />
         </div>
 
         <AnIndex

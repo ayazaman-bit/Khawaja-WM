@@ -12,8 +12,9 @@ export const AN_SOURCE = {
 };
 
 // ---- Reference / baseline values --------------------------------------------
-// Baselines are the anchor points the live model and Cost Pressure Index are
-// measured against. Update them as your market reference shifts.
+// Baselines anchor the live "vs ref" tile badges and the AN model. They are
+// also the DEFAULT reference for the Cost Pressure Index, but the user can
+// re-base that index in the UI ("Set today as reference" / edit budget values).
 export const BASELINES = {
   crudeUsdBbl: 78, // Brent crude reference (USD/bbl)
   anUsdMt: 1450, // Acrylonitrile reference (USD/MT)

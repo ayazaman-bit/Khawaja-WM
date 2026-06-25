@@ -21,11 +21,15 @@ const write = (key, value) => {
 export const KEYS = {
   anchor: "kwm.anAnchor", // legacy single anchor (migrated into anLog)
   anLog: "kwm.anLog", // [{ anUsdMt, crudeUsdBbl, date, note }] confirmed AN prices
+  reference: "kwm.reference", // Cost Pressure Index reference (100 = this)
   calc: "kwm.calcInputs", // saved calculator overrides
 };
 
 export const loadAnchor = () => read(KEYS.anchor, null);
 export const saveAnchor = (anchor) => write(KEYS.anchor, anchor);
+
+export const loadReference = () => read(KEYS.reference, null);
+export const saveReference = (reference) => write(KEYS.reference, reference);
 
 export const loadAnLog = () => read(KEYS.anLog, []);
 export const saveAnLog = (log) => write(KEYS.anLog, log);
