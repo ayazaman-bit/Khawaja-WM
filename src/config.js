@@ -23,6 +23,7 @@ export const NEPRA_SOURCE = {
 // re-base that index in the UI ("Set today as reference" / edit budget values).
 export const BASELINES = {
   crudeUsdBbl: 78, // Brent crude reference (USD/bbl)
+  crudeWtiUsdBbl: 72, // WTI crude reference (USD/bbl)
   anUsdMt: 1450, // Acrylonitrile reference (USD/MT)
   woolUsdKg: 11.5, // Wool reference, clean basis (USD/kg)
   goldUsdOz: 2350, // Gold reference (USD per troy ounce)

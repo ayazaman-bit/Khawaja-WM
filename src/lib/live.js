@@ -70,11 +70,19 @@ async function fetchMarkets() {
         asOf: data?.crude?.asOf || null,
         series: Array.isArray(data?.crude?.series) ? data.crude.series : [],
       },
+      wti: {
+        value: Number(data?.wti?.usdBbl) || BASELINES.crudeWtiUsdBbl,
+        live: data?.wti?.source && data.wti.source !== "fallback",
+        source: data?.wti?.source || "fallback",
+        asOf: data?.wti?.asOf || null,
+        series: Array.isArray(data?.wti?.series) ? data.wti.series : [],
+      },
     };
   } catch {
     return {
       gold: { value: BASELINES.goldUsdOz, live: false, source: "fallback", asOf: null, series: [] },
       crude: { value: BASELINES.crudeUsdBbl, live: false, source: "fallback", asOf: null, series: [] },
+      wti: { value: BASELINES.crudeWtiUsdBbl, live: false, source: "fallback", asOf: null, series: [] },
     };
   }
 }
@@ -181,7 +189,8 @@ export async function fetchSnapshot(anchor) {
     at: Date.now(),
     fx: fx.usd, // PKR/USD { value, live } (used by the cost model)
     fxAll: fx, // { usd, gbp, eur, cny } each { value, live }
-    crude, // { value, live, source, asOf }
+    crude, // Brent { value, live, source, asOf }
+    wti: markets.wti, // WTI { value, live, source, asOf }
     gold: { ...gold, local: goldLocal(gold.value, fx.usd.value) },
     an, // USD/MT (crude-anchored estimate)
     anSeries, // [{ t, v }] derived from crude

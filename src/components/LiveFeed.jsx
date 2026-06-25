@@ -35,7 +35,7 @@ export default function LiveFeed({ snap }) {
         <div className="text-[11px] uppercase tracking-wide text-faint mb-2">
           Commodities
         </div>
-        <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard
             label="Brent Crude"
             value={num(snap.crude.value, 2)}
@@ -43,6 +43,14 @@ export default function LiveFeed({ snap }) {
             change={change(snap.crude.value, BASELINES.crudeUsdBbl)}
             live={snap.crude.live}
             tag={snap.crude.live ? "LIVE" : "EST"}
+          />
+          <StatCard
+            label="WTI Crude"
+            value={num(snap.wti.value, 2)}
+            unit="USD/bbl"
+            change={change(snap.wti.value, BASELINES.crudeWtiUsdBbl)}
+            live={snap.wti.live}
+            tag={snap.wti.live ? "LIVE" : "EST"}
           />
           <StatCard
             label="Gold"
