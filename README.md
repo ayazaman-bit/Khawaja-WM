@@ -1,5 +1,7 @@
 # Khawaja Woollen Mills — Market Intelligence Dashboard
 
+**Live:** https://khawaja-woollen-mills.netlify.app
+
 A live dashboard for **Khawaja Woollen Mills (KWM)** that shows real-time cost
 signals for acrylic yarn production and lets you enter your own costs manually to
 get an estimated **final cost** and **suggested sell price**.
