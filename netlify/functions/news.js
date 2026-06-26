@@ -33,9 +33,15 @@ const ENERGY_FEEDS = [
   GNEWS('(GEPCO OR "Gujranwala Electric Power Company")'),
 ];
 
-// Direct outlet feed (general — keyword-filtered to energy below). Adds
-// resilience if Google rate-limits the datacenter IP.
+// Direct Pakistani outlet feeds (general — keyword-filtered to energy below).
+// NOTE: several sit behind Cloudflare and may 403 a datacenter IP (Netlify).
+// That's fine — tryFeed() returns [] on failure, the Google News searches carry
+// the panel, and freshest() guarantees nothing stale shows regardless of source.
 const ENERGY_OUTLET_FEEDS = [
+  { url: "https://www.brecorder.com/feeds/latest-news", source: "Business Recorder" },
+  { url: "https://www.brecorder.com/feeds/markets", source: "Business Recorder" },
+  { url: "https://www.dawn.com/feeds/business", source: "Dawn" },
+  { url: "https://tribune.com.pk/feed/business", source: "Express Tribune" },
   { url: "https://propakistani.pk/feed/", source: "ProPakistani" },
 ];
 const ENERGY_KW =
@@ -67,32 +73,40 @@ export default async (req) => {
 
 export const config = { path: "/api/news" };
 
-// Energy: merge several Pakistan power feeds, de-dupe, sort newest-first, and
-// enforce freshness so stale items can never surface at the top.
+// Energy: merge the Pakistan power searches + outlet feeds, freshness-guarded.
 async function energyNews() {
   const envFeed = env("NEWS_ENERGY_RSS_URL");
-  const googleFeeds = [envFeed, ...ENERGY_FEEDS].filter(Boolean);
+  return mergedNews({
+    googleFeeds: [envFeed, ...ENERGY_FEEDS].filter(Boolean),
+    outletFeeds: ENERGY_OUTLET_FEEDS,
+    keyword: ENERGY_KW, // outlet feeds are general — keep only energy headlines
+    freshDays: ENERGY_FRESH_DAYS,
+    maxDays: ENERGY_MAX_DAYS,
+    label: "energy:merged",
+  });
+}
 
+// Generic merge: pull Google-News searches (already topic-scoped) + general
+// outlet feeds (optionally keyword-filtered), de-dupe, sort newest-first, and
+// keep only fresh items so stale headlines can never surface at the top.
+async function mergedNews({ googleFeeds, outletFeeds, keyword, freshDays, maxDays, label }) {
   const [googleGroups, outletGroups] = await Promise.all([
     Promise.all(googleFeeds.map((u) => tryFeed(u))),
     Promise.all(
-      ENERGY_OUTLET_FEEDS.map((f) =>
+      outletFeeds.map((f) =>
         tryFeed(f.url).then((r) => r.map((it) => ({ ...it, _source: f.source })))
       )
     ),
   ]);
 
-  // Google results are already topic-scoped; outlet results are general, so
-  // keep only energy-relevant headlines from those.
   const google = googleGroups.flat().map(withSource);
-  const outlet = outletGroups
-    .flat()
-    .filter((it) => ENERGY_KW.test(it.title))
-    .map((it) => ({ ...withSource(it), source: it._source || null }));
+  let outlet = outletGroups.flat();
+  if (keyword) outlet = outlet.filter((it) => keyword.test(it.title));
+  outlet = outlet.map((it) => ({ ...withSource(it), source: it._source || null }));
 
   const merged = dedupe([...google, ...outlet]).sort(byDateDesc);
-  const items = freshest(merged, ENERGY_FRESH_DAYS, ENERGY_MAX_DAYS).slice(0, MAX_ITEMS);
-  return { items, source: "energy:merged", count: items.length };
+  const items = freshest(merged, freshDays, maxDays).slice(0, MAX_ITEMS);
+  return { items, source: label, count: items.length };
 }
 
 // Markets: first feed that returns anything (unchanged behaviour).
