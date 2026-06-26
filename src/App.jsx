@@ -11,6 +11,7 @@ import CostCalculator from "./components/CostCalculator.jsx";
 import {
   fetchSnapshot,
   fetchNews,
+  fetchPakistanNews,
   fetchEnergyNews,
   fetchAnBenchmark,
 } from "./lib/live.js";
@@ -31,7 +32,8 @@ export default function App() {
   const [snap, setSnap] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [inputs, setInputs] = useState(() => loadCalc());
-  const [news, setNews] = useState(null); // null = loading
+  const [news, setNews] = useState(null); // null = loading (markets panel)
+  const [pkNews, setPkNews] = useState(null); // Pakistan business & energy ticker
   const [energyNews, setEnergyNews] = useState(null); // PK power news
   const [benchmark, setBenchmark] = useState(null);
   const [elecLog, setElecLog] = useState(() => loadElecLog());
@@ -101,6 +103,21 @@ export default function App() {
     };
     loadNews();
     const id = setInterval(loadNews, 15 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  // Pakistan business & energy news for the top ticker.
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      const items = await fetchPakistanNews();
+      if (alive) setPkNews(items);
+    };
+    load();
+    const id = setInterval(load, 15 * 60 * 1000);
     return () => {
       alive = false;
       clearInterval(id);
@@ -210,7 +227,7 @@ export default function App() {
         refreshing={refreshing}
       />
       <WorldClocks />
-      <NewsTicker items={news} />
+      <NewsTicker items={pkNews} label="PAKISTAN" />
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5">
         <LiveFeed snap={snap} />

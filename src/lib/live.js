@@ -111,6 +111,20 @@ export async function fetchNews() {
   }
 }
 
+// ---- Pakistan business & energy ticker via /api/news?topic=pakistan --------
+export async function fetchPakistanNews() {
+  try {
+    const res = await fetch("/api/news?topic=pakistan", {
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!res.ok) throw new Error(`pk news ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
 // ---- Pakistan power / NEPRA news via /api/news?topic=energy ----------------
 export async function fetchEnergyNews() {
   try {

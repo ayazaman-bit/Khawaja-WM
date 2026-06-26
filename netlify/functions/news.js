@@ -50,6 +50,27 @@ const ENERGY_KW =
 const ENERGY_FRESH_DAYS = 30; // prefer items newer than this…
 const ENERGY_MAX_DAYS = 45; // …and never show anything older than this.
 
+// Pakistan business & energy ticker (topic=pakistan): economy, textile/yarn,
+// and power. Same merge engine as energy, just broader queries and fresher.
+const PAKISTAN_FEEDS = [
+  GNEWS(
+    'Pakistan (economy OR rupee OR inflation OR exports OR imports OR IMF OR ' +
+      '"State Bank" OR budget OR tax OR trade) business'
+  ),
+  GNEWS("Pakistan (textile OR yarn OR spinning OR APTMA OR cotton) industry"),
+  GNEWS('Pakistan (electricity OR NEPRA OR "power tariff" OR gas OR energy OR petrol)'),
+];
+const PK_OUTLET_FEEDS = [
+  { url: "https://www.brecorder.com/feeds/latest-news", source: "Business Recorder" },
+  { url: "https://www.brecorder.com/feeds/markets", source: "Business Recorder" },
+  { url: "https://www.dawn.com/feeds/business", source: "Dawn" },
+  { url: "https://tribune.com.pk/feed/business", source: "Express Tribune" },
+];
+const PK_KW =
+  /(econom|rupee|inflation|export|import|\bIMF\b|state bank|\bSBP\b|budget|\btax\b|textile|yarn|spinning|aptma|cotton|trade|tariff|electric|power|nepra|\bgas\b|energy|petrol|market|stocks|\bKSE\b|business|industr)/i;
+const PK_FRESH_DAYS = 14; // a ticker should feel current
+const PK_MAX_DAYS = 30;
+
 const MAX_ITEMS = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -61,7 +82,12 @@ export default async (req) => {
     /* no query */
   }
 
-  const payload = topic === "energy" ? await energyNews() : await marketsNews();
+  const payload =
+    topic === "energy"
+      ? await energyNews()
+      : topic === "pakistan"
+      ? await pakistanNews()
+      : await marketsNews();
 
   return new Response(JSON.stringify(payload), {
     headers: {
@@ -83,6 +109,18 @@ async function energyNews() {
     freshDays: ENERGY_FRESH_DAYS,
     maxDays: ENERGY_MAX_DAYS,
     label: "energy:merged",
+  });
+}
+
+// Pakistan business & energy: broad economy/textile/power merge for the ticker.
+async function pakistanNews() {
+  return mergedNews({
+    googleFeeds: PAKISTAN_FEEDS,
+    outletFeeds: PK_OUTLET_FEEDS,
+    keyword: PK_KW,
+    freshDays: PK_FRESH_DAYS,
+    maxDays: PK_MAX_DAYS,
+    label: "pakistan:merged",
   });
 }
 
