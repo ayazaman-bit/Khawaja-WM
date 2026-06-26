@@ -71,6 +71,30 @@ const PK_KW =
 const PK_FRESH_DAYS = 14; // a ticker should feel current
 const PK_MAX_DAYS = 30;
 
+// International / global markets ticker (topic=global): US/China/UK markets,
+// plus textile-relevant commodities. US-locale Google News + reliable BBC/CNBC
+// outlet feeds (these serve datacenter IPs, unlike most PK outlets).
+const GNEWS_INTL = (q) =>
+  "https://news.google.com/rss/search?q=" +
+  encodeURIComponent(q) +
+  "&hl=en-US&gl=US&ceid=US:en";
+
+const GLOBAL_FEEDS = [
+  GNEWS_INTL(
+    '(global markets OR "Federal Reserve" OR "Wall Street" OR inflation OR ' +
+      'tariffs OR "interest rates") business'
+  ),
+  GNEWS_INTL("China (economy OR yuan OR exports OR manufacturing OR trade OR tariffs)"),
+  GNEWS_INTL('(UK OR Britain OR Europe) (economy OR "Bank of England" OR ECB OR inflation OR trade)'),
+  GNEWS_INTL("(acrylic OR polyester OR yarn OR cotton OR textile) (price OR market)"),
+];
+const GLOBAL_OUTLET_FEEDS = [
+  { url: "https://feeds.bbci.co.uk/news/business/rss.xml", source: "BBC" },
+  { url: "https://www.cnbc.com/id/100727362/device/rss/rss.html", source: "CNBC" },
+];
+const GLOBAL_FRESH_DAYS = 7; // global news moves fast
+const GLOBAL_MAX_DAYS = 21;
+
 const MAX_ITEMS = 12;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -87,6 +111,8 @@ export default async (req) => {
       ? await energyNews()
       : topic === "pakistan"
       ? await pakistanNews()
+      : topic === "global"
+      ? await globalNews()
       : await marketsNews();
 
   return new Response(JSON.stringify(payload), {
@@ -121,6 +147,18 @@ async function pakistanNews() {
     freshDays: PK_FRESH_DAYS,
     maxDays: PK_MAX_DAYS,
     label: "pakistan:merged",
+  });
+}
+
+// International / global markets: US/China/UK + textile commodities.
+async function globalNews() {
+  return mergedNews({
+    googleFeeds: GLOBAL_FEEDS,
+    outletFeeds: GLOBAL_OUTLET_FEEDS,
+    keyword: null, // outlet feeds are already business sections
+    freshDays: GLOBAL_FRESH_DAYS,
+    maxDays: GLOBAL_MAX_DAYS,
+    label: "global:merged",
   });
 }
 

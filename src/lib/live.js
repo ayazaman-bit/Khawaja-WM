@@ -111,6 +111,20 @@ export async function fetchNews() {
   }
 }
 
+// ---- International / global markets ticker via /api/news?topic=global ------
+export async function fetchGlobalNews() {
+  try {
+    const res = await fetch("/api/news?topic=global", {
+      signal: AbortSignal.timeout(9000),
+    });
+    if (!res.ok) throw new Error(`global news ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data?.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
 // ---- Pakistan business & energy ticker via /api/news?topic=pakistan --------
 export async function fetchPakistanNews() {
   try {

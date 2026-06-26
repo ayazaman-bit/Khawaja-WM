@@ -12,6 +12,7 @@ import {
   fetchSnapshot,
   fetchNews,
   fetchPakistanNews,
+  fetchGlobalNews,
   fetchEnergyNews,
   fetchAnBenchmark,
 } from "./lib/live.js";
@@ -34,6 +35,7 @@ export default function App() {
   const [inputs, setInputs] = useState(() => loadCalc());
   const [news, setNews] = useState(null); // null = loading (markets panel)
   const [pkNews, setPkNews] = useState(null); // Pakistan business & energy ticker
+  const [globalNews, setGlobalNews] = useState(null); // international markets ticker
   const [energyNews, setEnergyNews] = useState(null); // PK power news
   const [benchmark, setBenchmark] = useState(null);
   const [elecLog, setElecLog] = useState(() => loadElecLog());
@@ -115,6 +117,21 @@ export default function App() {
     const load = async () => {
       const items = await fetchPakistanNews();
       if (alive) setPkNews(items);
+    };
+    load();
+    const id = setInterval(load, 15 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
+  // International / global markets news for the mid-page ticker.
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      const items = await fetchGlobalNews();
+      if (alive) setGlobalNews(items);
     };
     load();
     const id = setInterval(load, 15 * 60 * 1000);
@@ -231,6 +248,8 @@ export default function App() {
 
       <main className="mx-auto max-w-7xl px-3 sm:px-4 py-4 sm:py-5 space-y-4 sm:space-y-5">
         <LiveFeed snap={snap} />
+
+        <NewsTicker items={globalNews} label="GLOBAL" accent="brand" inline />
 
         <AnIndex
           log={anLog}
